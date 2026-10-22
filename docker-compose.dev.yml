@@ -1,0 +1,15 @@
+services:
+  gestorlar-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: gestorlar-dev
+    restart: unless-stopped
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-https://xgdzyqfalbibzelpdpvr.supabase.co}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-sb_publishable_mlcPsXMP2mAeDT8peciIkQ_8167Spvk}
+    volumes:
+      - .:/app
+      - /app/node_modules

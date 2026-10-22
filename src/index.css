@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-base: #06070a;
+    --bg-surface: #0a0b10;
+    --bg-card: #0c0e14;
+    --bg-card-hover: #121520;
+    --border-subtle: #171b26;
+    --border-bright: #272f42;
+    --accent-emerald: #00FF87;
+    --accent-cyan: #00D2FF;
+    --accent-purple: #9D00FF;
+    --accent-magenta: #FF007F;
+    --accent-orange: #FF6B00;
+    --accent-yellow: #FFD600;
+    --text-primary: #F3F4F6;
+    --text-secondary: #9CA3AF;
+    --text-muted: #4B5563;
+  }
+
+  * {
+    border-color: var(--border-subtle);
+  }
+
+  body {
+    background-color: #06070a;
+    color: #F3F4F6;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* Custom scrollbar for dark fintech aesthetic */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #06070a;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #171b26;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #272f42;
+  }
+}
+
+/* Hyper Charts Card Styles */
+.hyper-card {
+  background: rgba(10, 12, 18, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid #161924;
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+              border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+              box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hyper-card:hover {
+  background: rgba(12, 15, 23, 0.88);
+  border-color: #262c3e;
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.9), 0 0 20px -5px rgba(0, 255, 135, 0.08);
+}
+
+/* Glassmorphism & Glow Utilities */
+.glass-panel {
+  background: rgba(12, 14, 20, 0.78);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glow-emerald {
+  filter: drop-shadow(0 0 10px rgba(0, 255, 135, 0.45));
+}
+
+.glow-cyan {
+  filter: drop-shadow(0 0 10px rgba(0, 210, 255, 0.45));
+}
+
+.glow-purple {
+  filter: drop-shadow(0 0 10px rgba(157, 0, 255, 0.45));
+}
+
+.glow-magenta {
+  filter: drop-shadow(0 0 10px rgba(255, 0, 127, 0.45));
+}
+
+.font-mono-numeric {
+  font-family: 'JetBrains Mono', monospace;
+  font-feature-settings: 'tnum' on, 'zero' on;
+}
+
+/* Iridescent Mesh Gradient Animation */
+@keyframes meshFloat {
+  0% {
+    transform: translate(0px, 0px) rotate(0deg) scale(1);
+  }
+  33% {
+    transform: translate(30px, -40px) rotate(4deg) scale(1.05);
+  }
+  66% {
+    transform: translate(-25px, 20px) rotate(-3deg) scale(0.98);
+  }
+  100% {
+    transform: translate(0px, 0px) rotate(0deg) scale(1);
+  }
+}
+
+.animate-mesh-slow {
+  animation: meshFloat 22s ease-in-out infinite;
+}
+
+/* Star Sparkle Pulse */
+@keyframes starPulse {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.15) rotate(45deg);
+    opacity: 1;
+  }
+}
+
+.animate-star-pulse {
+  animation: starPulse 3s ease-in-out infinite;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .animate-mesh-slow,
+  .animate-star-pulse {
+    animation: none !important;
+  }
+  .hyper-card {
+    transition: none !important;
+  }
+}

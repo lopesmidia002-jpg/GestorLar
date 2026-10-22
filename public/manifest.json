@@ -1,0 +1,17 @@
+{
+  "name": "Gestor Financeiro do Lar",
+  "short_name": "GestorLar",
+  "description": "Controle financeiro familiar de alta densidade visual (50-30-20)",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07080b",
+  "theme_color": "#00FF87",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

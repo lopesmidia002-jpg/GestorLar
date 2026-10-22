@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <rect width="512" height="512" rx="128" fill="#07080b"/>
+  <rect x="16" y="16" width="480" height="480" rx="112" stroke="#222738" stroke-width="4"/>
+  <circle cx="256" cy="256" r="160" stroke="#181b24" stroke-width="8"/>
+  <path d="M 256 96 A 160 160 0 0 1 416 256" stroke="#00FF87" stroke-width="14" stroke-linecap="round"/>
+  <path d="M 416 256 A 160 160 0 0 1 200 410" stroke="#00D2FF" stroke-width="14" stroke-linecap="round"/>
+  <path d="M 200 410 A 160 160 0 0 1 256 96" stroke="#9D00FF" stroke-width="14" stroke-linecap="round"/>
+  <!-- Central Icon (Shield + Trending Up) -->
+  <circle cx="256" cy="256" r="70" fill="#0d0f15" stroke="#00FF87" stroke-width="4"/>
+  <path d="M 226 270 L 246 250 L 266 264 L 290 236" stroke="#00FF87" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M 276 236 L 290 236 L 290 250" stroke="#00FF87" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

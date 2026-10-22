@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Sellix Animated Video Background</title>
+  <style>
+    /* 1. Reset Total e Eliminação de Barras de Rolagem / Margens */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      background-color: #000000;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* 2. Container Principal Fixo Fullscreen */
+    .bg-video-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100vh;
+      height: 100dvh;
+      background-color: #000000;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: -1;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* 3. Elementos de Vídeo para Transição Cruzada Contínua */
+    .bg-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 51% 8%;
+      opacity: 0;
+      transition: opacity 0.9s ease;
+      will-change: opacity;
+      pointer-events: none;
+      background-color: #000000;
+    }
+
+    .bg-video.is-active {
+      opacity: 1;
+    }
+
+    /* 4. Imagem Estática de Poster para prefers-reduced-motion */
+    .bg-poster-static {
+      display: none;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: 51% 8%;
+      background-color: #000000;
+      pointer-events: none;
+    }
+
+    /* 5. Acessibilidade: prefers-reduced-motion */
+    @media (prefers-reduced-motion: reduce) {
+      .bg-video {
+        display: none !important;
+      }
+      .bg-poster-static {
+        display: block !important;
+        opacity: 1 !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Container Principal do Background Animado Fullscreen -->
+  <div class="bg-video-container" aria-hidden="true">
+    <!-- Imagem de Poster Estática (Exibida exclusivamente quando prefers-reduced-motion estiver ativo) -->
+    <img 
+      class="bg-poster-static"
+      src="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp"
+      alt=""
+    />
+
+    <!-- Camada de Vídeo A (Ativo Inicial) -->
+    <video
+      id="bg-video-a"
+      class="bg-video is-active"
+      src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4"
+      poster="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp"
+      autoplay
+      muted
+      playsinline
+      webkit-playsinline
+      loop
+      preload="auto"
+    ></video>
+
+    <!-- Camada de Vídeo B (Para Crossfade Contínuo sem cortes visíveis) -->
+    <video
+      id="bg-video-b"
+      class="bg-video"
+      src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260912_104036_bd6924f6-3c8e-417e-8465-6d03c8c2e9e6.mp4"
+      poster="https://d2ol7oe51mr4n9.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/82e7eb75-c65f-490a-99b5-f3d1cad54200.webp"
+      muted
+      playsinline
+      webkit-playsinline
+      loop
+      preload="auto"
+    ></video>
+  </div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // 1. Elementos dos dois vídeos para crossfade
+      var videoA = document.getElementById('bg-video-a');
+      var videoB = document.getElementById('bg-video-b');
+
+      if (!videoA || !videoB) return;
+
+      // Garantir muting para liberação imediata do autoplay em navegadores e dispositivos móveis
+      videoA.muted = true;
+      videoB.muted = true;
+
+      // 2. Parâmetros de sincronização do Crossfade
+      var FADE_DURATION_SEC = 0.9; // 900 milissegundos
+      var FADE_DURATION_MS = 900;
+
+      var activeVideo = videoA;
+      var inactiveVideo = videoB;
+      var isTransitioning = false;
+      var animFrameId = null;
+
+      // 3. Verificação de Preferência por Movimento Reduzido (Acessibilidade)
+      var motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+      var prefersReducedMotion = motionQuery.matches;
+
+      function checkMotionPreference() {
+        prefersReducedMotion = motionQuery.matches;
+        if (prefersReducedMotion) {
+          if (!videoA.paused) videoA.pause();
+          if (!videoB.paused) videoB.pause();
+          if (animFrameId) cancelAnimationFrame(animFrameId);
+        } else {
+          startPlayback(activeVideo);
+          scheduleLoopCheck();
+        }
+      }
+
+      if (motionQuery.addEventListener) {
+        motionQuery.addEventListener('change', checkMotionPreference);
+      } else if (motionQuery.addListener) {
+        motionQuery.addListener(checkMotionPreference);
+      }
+
+      // 4. Início seguro da reprodução (tratando restrições de autoplay sem erros não capturados)
+      function startPlayback(video) {
+        if (prefersReducedMotion) return;
+        video.muted = true;
+        var playPromise = video.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(function () {
+            // Falha tratada silenciosamente sem poluir o console
+          });
+        }
+      }
+
+      // 5. Execução da Transição Cruzada (Crossfade de 0.9s entre os dois vídeos)
+      function triggerCrossfade() {
+        if (isTransitioning || prefersReducedMotion) return;
+        isTransitioning = true;
+
+        var currentActive = activeVideo;
+        var nextActive = inactiveVideo;
+
+        // Inicia o próximo vídeo a partir de currentTime = 0
+        nextActive.currentTime = 0;
+        startPlayback(nextActive);
+
+        // Dispara transição CSS suave de opacidade
+        nextActive.classList.add('is-active');
+        currentActive.classList.remove('is-active');
+
+        // Após os 900ms da transição, reseta e pausa o vídeo anterior
+        setTimeout(function () {
+          currentActive.pause();
+          currentActive.currentTime = 0;
+
+          // Inverte referências para o próximo ciclo
+          activeVideo = nextActive;
+          inactiveVideo = currentActive;
+          isTransitioning = false;
+        }, FADE_DURATION_MS);
+      }
+
+      // 6. Monitoramento de tempo restante do vídeo ativo
+      function scheduleLoopCheck() {
+        if (prefersReducedMotion) return;
+
+        if (activeVideo && !isTransitioning && activeVideo.duration && !isNaN(activeVideo.duration)) {
+          var timeLeft = activeVideo.duration - activeVideo.currentTime;
+          // Quando faltar exatamente 0.9s para o fim, aciona o crossfade
+          if (timeLeft <= FADE_DURATION_SEC && timeLeft > 0) {
+            triggerCrossfade();
+          }
+        }
+
+        animFrameId = requestAnimationFrame(scheduleLoopCheck);
+      }
+
+      // 7. Inicialização
+      function init() {
+        if (prefersReducedMotion) return;
+
+        startPlayback(activeVideo);
+        animFrameId = requestAnimationFrame(scheduleLoopCheck);
+
+        // Fallback de segurança com timeupdate caso requestAnimationFrame seja suspenso pelo sistema operacional
+        activeVideo.addEventListener('timeupdate', function () {
+          if (!isTransitioning && activeVideo.duration && !isNaN(activeVideo.duration)) {
+            var timeLeft = activeVideo.duration - activeVideo.currentTime;
+            if (timeLeft <= FADE_DURATION_SEC && timeLeft > 0) {
+              triggerCrossfade();
+            }
+          }
+        });
+      }
+
+      // Desbloqueio adicional no primeiro toque/clique caso o navegador bloqueie autoplay inicial
+      function unlockAutoplay() {
+        if (!prefersReducedMotion) {
+          startPlayback(activeVideo);
+        }
+        window.removeEventListener('click', unlockAutoplay);
+        window.removeEventListener('touchstart', unlockAutoplay);
+      }
+      window.addEventListener('click', unlockAutoplay, { passive: true, once: true });
+      window.addEventListener('touchstart', unlockAutoplay, { passive: true, once: true });
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else {
+        init();
+      }
+    })();
+  </script>
+</body>
+</html>
