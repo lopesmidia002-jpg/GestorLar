@@ -1,9 +1,8 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import type { User } from '@supabase/supabase-js';
 import type { EstadoFinanceiro, ItemLancamento, MetasRegra, CategoriaOrcamentaria } from '../types/finance';
 import { ESTADO_INICIAL } from '../data/mockData';
 import { calcularOrcamento } from '../utils/calculations';
-import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabase';
+import { isSupabaseConfigured } from '../lib/supabase';
 import {
   carregarDadosNuvem,
   migrarDadosLocaisParaNuvem,
@@ -18,7 +17,7 @@ const STORAGE_KEY = 'gestor_financeiro_pwa_v1';
 export type StatusSyncNuvem = 'conectado' | 'sincronizando' | 'offline' | 'local_only' | 'erro';
 
 export function useFinanceStorage() {
-  // 1. Estado financeiro com carregamento atômico local do localStorage
+  // 1. Estado financeiro com carregamento atômico local do localStorage (0ms latência)
   const [estado, setEstado] = useState<EstadoFinanceiro>(() => {
     try {
       const salvo = localStorage.getItem(STORAGE_KEY);
@@ -35,10 +34,9 @@ export function useFinanceStorage() {
   });
 
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
-  const [usuario, setUsuario] = useState<User | null>(null);
   const [statusSync, setStatusSync] = useState<StatusSyncNuvem>(() => {
     if (!navigator.onLine) return 'offline';
-    return isSupabaseConfigured() ? 'sincronizando' : 'local_only';
+    return isSupabaseConfigured() ? 'conectado' : 'local_only';
   });
 
   const estadoRef = useRef<EstadoFinanceiro>(estado);
@@ -53,15 +51,49 @@ export function useFinanceStorage() {
     }
   }, [estado]);
 
-  // 3. Monitoramento de conectividade offline/online
+  // 3. Sincronização automática com a Nuvem Supabase
+  const sincronizarComNuvem = useCallback(async () => {
+    if (!navigator.onLine || !isSupabaseConfigured()) {
+      setStatusSync(navigator.onLine ? 'local_only' : 'offline');
+      return;
+    }
+
+    try {
+      setStatusSync('sincronizando');
+      const resultado = await carregarDadosNuvem();
+
+      if (resultado.encontrado && resultado.estado) {
+        // Nuvem tem dados atualizados
+        setEstado(resultado.estado);
+        setStatusSync('conectado');
+      } else {
+        // Banco na nuvem vazio: migra automaticamente todo o estado local para a nuvem
+        await migrarDadosLocaisParaNuvem(estadoRef.current);
+        setStatusSync('conectado');
+      }
+    } catch (err) {
+      console.error('Erro na sincronização automática:', err);
+      setStatusSync('erro');
+    }
+  }, []);
+
+  // 4. Inicialização automática ao abrir o app
+  useEffect(() => {
+    if (isSupabaseConfigured() && navigator.onLine) {
+      sincronizarComNuvem();
+    }
+  }, [sincronizarComNuvem]);
+
+  // 5. Monitoramento de conectividade: Ao voltar a ficar online, SALVA TUDO AUTOMATICAMENTE!
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      if (usuario) {
+      if (isSupabaseConfigured()) {
         setStatusSync('sincronizando');
-        sincronizarComNuvem(usuario.id);
-      } else {
-        setStatusSync(isSupabaseConfigured() ? 'local_only' : 'local_only');
+        // Salva tudo automaticamente na nuvem sem precisar apertar botão
+        migrarDadosLocaisParaNuvem(estadoRef.current).then(() => {
+          sincronizarComNuvem();
+        });
       }
     };
 
@@ -77,77 +109,14 @@ export function useFinanceStorage() {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [usuario]);
-
-  // 4. Sincronização e carregamento com a Nuvem Supabase
-  const sincronizarComNuvem = useCallback(async (userId: string) => {
-    if (!navigator.onLine) {
-      setStatusSync('offline');
-      return;
-    }
-
-    try {
-      setStatusSync('sincronizando');
-      const resultado = await carregarDadosNuvem(userId);
-
-      if (resultado.encontrado && resultado.estado) {
-        // Nuvem tem dados atualizados
-        setEstado(resultado.estado);
-        setStatusSync('conectado');
-      } else {
-        // Primeira vez do usuário na nuvem: migra os dados locais existentes
-        await migrarDadosLocaisParaNuvem(userId, estadoRef.current);
-        setStatusSync('conectado');
-      }
-    } catch (err) {
-      console.error('Erro ao sincronizar com nuvem:', err);
-      setStatusSync('erro');
-    }
-  }, []);
-
-  // 5. Inicialização e escuta da sessão do Supabase
-  useEffect(() => {
-    const client = getSupabaseClient();
-    if (!client) {
-      setStatusSync(navigator.onLine ? 'local_only' : 'offline');
-      setUsuario(null);
-      return;
-    }
-
-    // Obter usuário logado atual
-    client.auth.getUser().then(({ data: { user } }) => {
-      setUsuario(user);
-      if (user) {
-        sincronizarComNuvem(user.id);
-      } else {
-        setStatusSync(navigator.onLine ? 'local_only' : 'offline');
-      }
-    });
-
-    // Escutar alterações de autenticação (login, logout, refresh)
-    const { data: { subscription } } = client.auth.onAuthStateChange((_event, session) => {
-      const novoUsuario = session?.user ?? null;
-      setUsuario(novoUsuario);
-
-      if (novoUsuario) {
-        sincronizarComNuvem(novoUsuario.id);
-      } else {
-        setStatusSync(navigator.onLine ? 'local_only' : 'offline');
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, [sincronizarComNuvem]);
 
   // 6. Escuta de atualizações em tempo real (Realtime Sync multi-dispositivo)
   useEffect(() => {
-    if (!usuario || !isOnline) return;
+    if (!isSupabaseConfigured() || !isOnline) return;
 
-    const cancelarInscricao = inscreverTempoRealNuvem(usuario.id, () => {
-      // Recarrega silenciosamente os dados atualizados
-      carregarDadosNuvem(usuario.id).then((res) => {
+    const cancelarInscricao = inscreverTempoRealNuvem(() => {
+      carregarDadosNuvem().then((res) => {
         if (res.encontrado && res.estado) {
           setEstado(res.estado);
         }
@@ -157,13 +126,13 @@ export function useFinanceStorage() {
     return () => {
       cancelarInscricao();
     };
-  }, [usuario, isOnline]);
+  }, [isOnline]);
 
   // Cálculos orçamentários memorizados
   const calculos = useMemo(() => calcularOrcamento(estado), [estado]);
 
   // ==========================================
-  // Mutações Locais com Sincronização em Nuvem
+  // Mutações Locais com Auto-Sync em Nuvem
   // ==========================================
 
   const adicionarItem = (novoItem: Omit<ItemLancamento, 'id'>) => {
@@ -177,28 +146,28 @@ export function useFinanceStorage() {
       itens: [itemCompleto, ...prev.itens],
     }));
 
-    if (usuario && isOnline) {
-      sincronizarItemNuvem(usuario.id, itemCompleto);
+    if (isOnline && isSupabaseConfigured()) {
+      sincronizarItemNuvem(itemCompleto);
     }
   };
 
   const atualizarItem = (id: string, updates: Partial<ItemLancamento>) => {
-    let itemAtualizadoParaNuvem: ItemLancamento | null = null;
+    let itemAtualizado: ItemLancamento | null = null;
 
     setEstado((prev) => {
       const novosItens = prev.itens.map((item) => {
         if (item.id === id) {
-          const atualizado = { ...item, ...updates };
-          itemAtualizadoParaNuvem = atualizado;
-          return atualizado;
+          const at = { ...item, ...updates };
+          itemAtualizado = at;
+          return at;
         }
         return item;
       });
       return { ...prev, itens: novosItens };
     });
 
-    if (usuario && isOnline && itemAtualizadoParaNuvem) {
-      sincronizarItemNuvem(usuario.id, itemAtualizadoParaNuvem);
+    if (isOnline && isSupabaseConfigured() && itemAtualizado) {
+      sincronizarItemNuvem(itemAtualizado);
     }
   };
 
@@ -208,28 +177,28 @@ export function useFinanceStorage() {
       itens: prev.itens.filter((item) => item.id !== id),
     }));
 
-    if (usuario && isOnline) {
-      removerItemNuvem(usuario.id, id);
+    if (isOnline && isSupabaseConfigured()) {
+      removerItemNuvem(id);
     }
   };
 
   const alternarPago = (id: string) => {
-    let itemAtualizadoParaNuvem: ItemLancamento | null = null;
+    let itemAtualizado: ItemLancamento | null = null;
 
     setEstado((prev) => {
       const novosItens = prev.itens.map((item) => {
         if (item.id === id) {
-          const atualizado = { ...item, pago: !item.pago };
-          itemAtualizadoParaNuvem = atualizado;
-          return atualizado;
+          const at = { ...item, pago: !item.pago };
+          itemAtualizado = at;
+          return at;
         }
         return item;
       });
       return { ...prev, itens: novosItens };
     });
 
-    if (usuario && isOnline && itemAtualizadoParaNuvem) {
-      sincronizarItemNuvem(usuario.id, itemAtualizadoParaNuvem);
+    if (isOnline && isSupabaseConfigured() && itemAtualizado) {
+      sincronizarItemNuvem(itemAtualizado);
     }
   };
 
@@ -238,8 +207,8 @@ export function useFinanceStorage() {
 
     setEstado((prev) => {
       const novoEstado = { ...prev, rendaFamiliar: valorValido };
-      if (usuario && isOnline) {
-        sincronizarPerfilNuvem(usuario.id, valorValido, prev.metasRegra);
+      if (isOnline && isSupabaseConfigured()) {
+        sincronizarPerfilNuvem(valorValido, prev.metasRegra);
       }
       return novoEstado;
     });
@@ -249,8 +218,8 @@ export function useFinanceStorage() {
     setEstado((prev) => {
       const metasAtualizadas = { ...prev.metasRegra, ...novasMetas };
       const novoEstado = { ...prev, metasRegra: metasAtualizadas };
-      if (usuario && isOnline) {
-        sincronizarPerfilNuvem(usuario.id, prev.rendaFamiliar, metasAtualizadas);
+      if (isOnline && isSupabaseConfigured()) {
+        sincronizarPerfilNuvem(prev.rendaFamiliar, metasAtualizadas);
       }
       return novoEstado;
     });
@@ -310,8 +279,8 @@ export function useFinanceStorage() {
         }
       }
 
-      if (usuario && isOnline) {
-        migrarDadosLocaisParaNuvem(usuario.id, novoEstado);
+      if (isOnline && isSupabaseConfigured()) {
+        migrarDadosLocaisParaNuvem(novoEstado);
       }
 
       return novoEstado;
@@ -337,8 +306,8 @@ export function useFinanceStorage() {
         })),
       };
 
-      if (usuario && isOnline) {
-        migrarDadosLocaisParaNuvem(usuario.id, novoEstado);
+      if (isOnline && isSupabaseConfigured()) {
+        migrarDadosLocaisParaNuvem(novoEstado);
       }
 
       return novoEstado;
@@ -347,15 +316,15 @@ export function useFinanceStorage() {
 
   const redefinirDadosPadrao = () => {
     setEstado(ESTADO_INICIAL);
-    if (usuario && isOnline) {
-      migrarDadosLocaisParaNuvem(usuario.id, ESTADO_INICIAL);
+    if (isOnline && isSupabaseConfigured()) {
+      migrarDadosLocaisParaNuvem(ESTADO_INICIAL);
     }
   };
 
-  const forcarSincronizacao = () => {
-    if (usuario) {
-      sincronizarComNuvem(usuario.id);
-    }
+  const forcarSincronizacao = async () => {
+    setStatusSync('sincronizando');
+    await migrarDadosLocaisParaNuvem(estadoRef.current);
+    await sincronizarComNuvem();
   };
 
   return {
@@ -363,7 +332,6 @@ export function useFinanceStorage() {
     calculos,
     isOnline,
     statusSync,
-    usuario,
     forcarSincronizacao,
     adicionarItem,
     atualizarItem,

@@ -21,18 +21,26 @@ flowchart TD
 ## 2. Detalhamento das Fases de Execução
 
 ### Fase 1: Setup e Infraestrutura Base
-- [ ] **1.1 Inicialização do Projeto:**
+- [x] **1.1 Inicialização do Projeto:**
   - Configurar projeto React 19 com Vite e TypeScript.
   - Instalar dependências essenciais: `lucide-react`, `clsx`, `tailwind-merge`.
-- [ ] **1.2 Configuração do Tailwind CSS:**
-  - Definir tokens de design da paleta **Obsidian Dark Fintech**:
-    - Fundo base: `#07080b`
-    - Painéis/Cards: `#0f1117`, `#181b24`
-    - Acentos: Verde Esmeralda `#00FF87`, Azul Ciano `#00D2FF`, Roxo `#9D00FF`
-    - Texto: `#F3F4F6`, `#9CA3AF`, `#4B5563`
-- [ ] **1.3 PWA Shell e Manifest:**
-  - Criar `manifest.json` com nome `Gestor Financeiro do Lar` e `standalone`.
-  - Configurar meta tags no `index.html` para suporte mobile iOS/Android (Apple Mobile Web App Capable, status bar preta).
+- [x] **1.2 Configuração do Factory Design System (Terminal War Room):**
+  - Configurar tokens Tailwind CSS v4 `@theme` conforme especificação Factory:
+    - Obsidian Canvas: `#101010`
+    - Carbon Lift: `#1d1a18`
+    - Ash Stroke: `#3d3a39`
+    - Graphite Mid: `#4d4947`
+    - Warm Granite: `#8a8380`
+    - Pale Stone: `#b8b3b0`
+    - Bone: `#eeeeee` (Flashlit Dispatch Card)
+    - Chalk: `#fafafa` (High-emphasis buttons)
+    - Signal Orange: `#ee6018`
+    - Metric Green: `#a0ca92`
+  - Fontes: Geist (400) com tracking negativo rigoroso e Geist Mono (12px uppercase).
+  - Radii planos: 3px (botões/nav), 10px (cards), 20px (painéis), zero sombras.
+- [x] **1.3 PWA Shell e Manifest:**
+  - Criar `manifest.json` com nome `Factory // Gestor Financeiro` e `standalone`.
+  - Configurar meta tags no `index.html` para suporte mobile iOS/Android com tema `#101010`.
 
 ---
 

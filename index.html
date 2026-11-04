@@ -6,24 +6,44 @@
     <title>Gestor Financeiro do Lar | PWA 50-30-20</title>
     <meta name="description" content="Controlador financeiro doméstico de alta densidade visual baseado na metodologia 50-30-20. Totalmente offline-first e com visualização matemática a 60 FPS." />
     
+    <!-- Auto-recuperação de cache de versão anterior -->
+    <script>
+      window.addEventListener('error', function(e) {
+        if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) {
+          console.warn('Arquivo estatico desatualizado detectado. Limpando cache e recarregando...');
+          if ('caches' in window) {
+            caches.keys().then(function(keys) {
+              return Promise.all(keys.map(function(k) { return caches.delete(k); }));
+            });
+          }
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(regs) {
+              for (var reg of regs) reg.unregister();
+            });
+          }
+          setTimeout(function() { window.location.reload(); }, 200);
+        }
+      }, true);
+    </script>
+
     <!-- PWA & Mobile Meta Tags -->
-    <meta name="theme-color" content="#07080b" />
+    <meta name="theme-color" content="#101010" />
     <meta name="color-scheme" content="dark" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="GestorLar" />
+    <meta name="apple-mobile-web-app-title" content="Factory // GestorLar" />
     
     <link rel="icon" type="image/svg+xml" href="/icon.svg" />
     <link rel="apple-touch-icon" href="/icon.svg" />
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- Google Fonts: Inter & JetBrains Mono -->
+    <!-- Google Fonts: Geist & Geist Mono (Factory Typography) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
   </head>
-  <body class="bg-[#07080b] text-[#F3F4F6] antialiased selection:bg-[#00FF87] selection:text-[#07080b]">
+  <body class="bg-[#101010] text-[#eeeeee] antialiased selection:bg-[#ee6018] selection:text-[#101010] font-['Geist',sans-serif]">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

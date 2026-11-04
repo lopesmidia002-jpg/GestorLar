@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { User } from '@supabase/supabase-js';
 import {
-  Cloud,
   CheckCircle2,
   RefreshCw,
   Copy,
@@ -139,12 +138,39 @@ export function ModalConexaoNuvem({
     try {
       if (modoAuth === 'login') {
         const { error } = await signInWithEmail(email, senha);
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes('Invalid login credentials')) {
+            throw new Error(
+              'Credenciais não encontradas. Como o banco de dados no Supabase foi recém-criado, você precisa criar seu cadastro antes de fazer o primeiro login.'
+            );
+          }
+          if (error.message.includes('Email not confirmed')) {
+            throw new Error(
+              'E-mail ainda não confirmado. Verifique a caixa de entrada (ou spam) do seu e-mail para ativar sua conta.'
+            );
+          }
+          throw error;
+        }
         setMensagemSucesso('Login efetuado com sucesso! Sincronizando dados...');
       } else {
-        const { error } = await signUpWithEmail(email, senha);
-        if (error) throw error;
-        setMensagemSucesso('Conta criada com sucesso! Verifique seu e-mail se a confirmação estiver ativa.');
+        const { data, error } = await signUpWithEmail(email, senha);
+        if (error) {
+          if (error.message.includes('User already registered')) {
+            throw new Error('Este e-mail já está cadastrado. Alterne para a aba "Já tenho conta" para entrar.');
+          }
+          if (error.message.includes('Password should be at least')) {
+            throw new Error('A senha deve conter no mínimo 6 caracteres.');
+          }
+          throw error;
+        }
+        
+        if (data?.session) {
+          setMensagemSucesso('Conta criada e conectada com sucesso! Sincronizando dados...');
+        } else {
+          setMensagemSucesso(
+            'Conta criada com sucesso! Verifique a caixa de entrada do seu e-mail para confirmar a ativação (se "Confirm email" estiver ativo no Supabase).'
+          );
+        }
       }
     } catch (err: any) {
       setMensagemErro(err.message || 'Erro ao autenticar no Supabase.');
@@ -171,86 +197,71 @@ export function ModalConexaoNuvem({
   const configurado = isSupabaseConfigured();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fadeIn">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/85 animate-fadeIn">
       <div 
-        className="w-full max-w-2xl bg-[#0a0c12] border border-[#1e2333] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="w-full max-w-2xl bg-[#101010] border border-[#3d3a39] rounded-[10px] overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Cabeçalho do Modal */}
-        <div className="flex items-center justify-between p-5 border-b border-[#161924] bg-[#0c0e16]/80">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#00FF87]/10 border border-[#00FF87]/30 flex items-center justify-center text-[#00FF87]">
-              <Cloud className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-bold text-white tracking-wide">
-                  Persistência & Nuvem Supabase
-                </h3>
-                <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full border ${
-                  statusSync === 'conectado'
-                    ? 'bg-emerald-950/60 border-emerald-500/40 text-[#00FF87]'
-                    : statusSync === 'sincronizando'
-                    ? 'bg-blue-950/60 border-blue-500/40 text-blue-400 animate-pulse'
-                    : 'bg-zinc-800/80 border-zinc-700 text-zinc-400'
-                }`}>
-                  {statusSync === 'conectado' && '🟢 Nuvem Ativa'}
-                  {statusSync === 'sincronizando' && '🔄 Sincronizando'}
-                  {statusSync === 'local_only' && '💻 Somente Local'}
-                  {statusSync === 'offline' && '🟡 Offline'}
-                  {statusSync === 'erro' && '🔴 Erro'}
-                </span>
-              </div>
-              <p className="text-xs text-[#9CA3AF]">
-                Multi-dispositivo com funcionamento 100% offline-first e sincronização em tempo real
-              </p>
-            </div>
+        {/* Cabeçalho do Modal: macOS Terminal Window Chrome */}
+        <div className="h-9 bg-[#161413] border-b border-[#3d3a39] px-4 flex items-center justify-between select-none">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+            <span className="ml-2 font-mono text-[11px] uppercase tracking-[-0.24px] text-[#eeeeee]">
+              FACTORY // CLOUD_SYNC_SUPABASE.CFG
+            </span>
           </div>
 
-          <button
-            onClick={onFechar}
-            className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-white hover:bg-[#161924] transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-3">
+            <span className="font-mono text-[10px] text-[#8a8380] uppercase">
+              STATUS: {statusSync}
+            </span>
+            <button
+              onClick={onFechar}
+              className="text-[#8a8380] hover:text-[#eeeeee] cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
-        {/* Abas de Navegação */}
-        <div className="flex border-b border-[#161924] bg-[#08090d] text-xs font-medium">
+        {/* Abas de Navegação: Factory Terminal Pills */}
+        <div className="flex border-b border-[#3d3a39] bg-[#161413] text-xs font-mono">
           <button
             onClick={() => setAbaAtiva('status')}
-            className={`flex-1 py-3 px-4 text-center border-b-2 transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 px-4 text-center transition-colors cursor-pointer flex items-center justify-center gap-2 ${
               abaAtiva === 'status'
-                ? 'border-[#00FF87] text-[#00FF87] bg-[#00FF87]/5 font-semibold'
-                : 'border-transparent text-[#9CA3AF] hover:text-white'
+                ? 'bg-[#101010] text-[#eeeeee] border-b-2 border-[#eeeeee]'
+                : 'text-[#8a8380] hover:text-[#eeeeee]'
             }`}
           >
             <Shield className="w-3.5 h-3.5" />
-            <span>Conta & Sincronização</span>
+            <span>CONTA & SYNC</span>
           </button>
 
           <button
             onClick={() => setAbaAtiva('config')}
-            className={`flex-1 py-3 px-4 text-center border-b-2 transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 px-4 text-center transition-colors cursor-pointer flex items-center justify-center gap-2 ${
               abaAtiva === 'config'
-                ? 'border-[#00FF87] text-[#00FF87] bg-[#00FF87]/5 font-semibold'
-                : 'border-transparent text-[#9CA3AF] hover:text-white'
+                ? 'bg-[#101010] text-[#eeeeee] border-b-2 border-[#eeeeee]'
+                : 'text-[#8a8380] hover:text-[#eeeeee]'
             }`}
           >
             <KeyRound className="w-3.5 h-3.5" />
-            <span>Chaves & Conexão</span>
+            <span>CHAVES & API</span>
           </button>
 
           <button
             onClick={() => setAbaAtiva('sql')}
-            className={`flex-1 py-3 px-4 text-center border-b-2 transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            className={`flex-1 py-2.5 px-4 text-center transition-colors cursor-pointer flex items-center justify-center gap-2 ${
               abaAtiva === 'sql'
-                ? 'border-[#00FF87] text-[#00FF87] bg-[#00FF87]/5 font-semibold'
-                : 'border-transparent text-[#9CA3AF] hover:text-white'
+                ? 'bg-[#101010] text-[#eeeeee] border-b-2 border-[#eeeeee]'
+                : 'text-[#8a8380] hover:text-[#eeeeee]'
             }`}
           >
             <Database className="w-3.5 h-3.5" />
-            <span>Script SQL (1-Clique)</span>
+            <span>SCRIPT SQL</span>
           </button>
         </div>
 
@@ -263,9 +274,23 @@ export function ModalConexaoNuvem({
         )}
 
         {mensagemErro && (
-          <div className="mx-6 mt-4 p-3 rounded-xl bg-rose-950/40 border border-rose-500/30 text-rose-400 text-xs flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span>{mensagemErro}</span>
+          <div className="mx-6 mt-4 p-3.5 rounded-xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs flex flex-col gap-2 animate-fadeIn">
+            <div className="flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-400 mt-0.5" />
+              <span className="leading-relaxed">{mensagemErro}</span>
+            </div>
+            {modoAuth === 'login' && mensagemErro.includes('recém-criado') && (
+              <button
+                type="button"
+                onClick={() => {
+                  setModoAuth('cadastro');
+                  setMensagemErro('');
+                }}
+                className="self-start inline-flex items-center gap-1.5 px-3 py-1.5 mt-1 rounded-lg bg-[#00FF87] text-[#07080b] font-bold text-xs hover:bg-[#00FF87]/90 transition cursor-pointer shadow-md"
+              >
+                <span>Criar cadastro agora com {email || 'este e-mail'}</span>
+              </button>
+            )}
           </div>
         )}
 
@@ -275,49 +300,49 @@ export function ModalConexaoNuvem({
           {abaAtiva === 'status' && (
             <div className="space-y-5">
               {!configurado ? (
-                <div className="p-4 rounded-xl bg-[#0e111a] border border-[#1e2333] flex flex-col gap-3">
+                <div className="p-4 rounded-[3px] bg-[#161413] border border-[#3d3a39] flex flex-col gap-3 font-mono">
                   <div className="flex items-start gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                    <AlertCircle className="w-4 h-4 text-[#ee6018] shrink-0 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-semibold text-white">Supabase ainda não configurado</h4>
-                      <p className="text-xs text-[#9CA3AF] mt-1 leading-relaxed">
-                        Seus dados estão sendo persistidos de forma segura no navegador via <strong>LocalStorage/Cache PWA</strong>. Para ativar backup em nuvem e sincronizar com seu celular, insira suas credenciais na aba <strong>Chaves & Conexão</strong>.
+                      <h4 className="text-xs uppercase text-[#eeeeee]">SUPABASE NÃO CONECTADO</h4>
+                      <p className="text-xs text-[#8a8380] mt-1 leading-relaxed font-sans">
+                        Seus dados estão sendo persistidos de forma segura no navegador via <strong>LocalStorage PWA</strong> (0ms latência). Para ativar backup em nuvem, insira suas credenciais na aba <strong>CHAVES & API</strong>.
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={() => setAbaAtiva('config')}
-                    className="self-start px-3 py-1.5 rounded-lg bg-[#00FF87] text-[#07080b] font-semibold text-xs hover:bg-[#00FF87]/90 transition"
+                    className="self-start px-3.5 py-1.5 rounded-[3px] bg-[#fafafa] text-[#101010] text-xs font-mono uppercase"
                   >
-                    Configurar Supabase Agora
+                    CONFIGURAR SUPABASE
                   </button>
                 </div>
               ) : usuario ? (
-                <div className="p-4 rounded-xl bg-[#0e111a] border border-[#1e2333] flex flex-col gap-4">
+                <div className="p-4 rounded-[3px] bg-[#161413] border border-[#3d3a39] flex flex-col gap-4 font-mono">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-full bg-[#00FF87]/15 border border-[#00FF87]/30 flex items-center justify-center text-[#00FF87]">
-                        <CheckCircle2 className="w-5 h-5" />
+                      <div className="w-8 h-8 rounded-[3px] bg-[#101010] border border-[#3d3a39] flex items-center justify-center text-[#a0ca92]">
+                        <CheckCircle2 className="w-4 h-4" />
                       </div>
                       <div>
-                        <div className="text-xs text-[#9CA3AF]">Conectado como:</div>
-                        <div className="text-sm font-semibold text-white font-mono">{usuario.email}</div>
+                        <div className="text-[11px] text-[#8a8380]">CONECTADO COMO:</div>
+                        <div className="text-xs text-[#eeeeee]">{usuario.email}</div>
                       </div>
                     </div>
 
                     <button
                       onClick={handleLogout}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#161924] hover:bg-rose-950/40 hover:text-rose-400 border border-[#262c3e] text-xs text-[#9CA3AF] transition"
+                      className="px-3 py-1.5 rounded-[3px] bg-[#101010] border border-[#3d3a39] hover:border-[#ee6018] text-xs text-[#8a8380] hover:text-[#ee6018] flex items-center gap-1.5 cursor-pointer"
                     >
                       <LogOut className="w-3.5 h-3.5" />
-                      <span>Sair da Conta</span>
+                      <span>SAIR</span>
                     </button>
                   </div>
 
-                  <div className="pt-3 border-t border-[#1a1e2b] flex items-center justify-between">
-                    <div className="text-xs text-[#9CA3AF] flex items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#00FF87] animate-pulse" />
-                      <span>Sincronização bidirecional em tempo real ativa</span>
+                  <div className="pt-3 border-t border-[#3d3a39] flex items-center justify-between">
+                    <div className="text-xs text-[#8a8380] flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#a0ca92]" />
+                      <span>SYNC EM TEMPO REAL ATIVO</span>
                     </div>
 
                     <button
@@ -325,55 +350,68 @@ export function ModalConexaoNuvem({
                         onForcarSincronizacao();
                         setMensagemSucesso('Sincronização manual solicitada com sucesso!');
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#00FF87]/15 hover:bg-[#00FF87]/25 border border-[#00FF87]/40 text-[#00FF87] text-xs font-medium transition cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-[3px] bg-[#fafafa] text-[#101010] text-xs flex items-center gap-1.5 cursor-pointer font-mono"
                     >
                       <RefreshCw className="w-3.5 h-3.5" />
-                      <span>Sincronizar Agora</span>
+                      <span>SINCRONIZAR AGORA</span>
                     </button>
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleAuth} className="p-4 rounded-xl bg-[#0e111a] border border-[#1e2333] flex flex-col gap-4">
-                  <div className="flex items-center justify-between pb-2 border-b border-[#1a1e2b]">
-                    <span className="text-xs font-semibold text-white uppercase tracking-wider">
-                      {modoAuth === 'login' ? 'Acessar com sua conta' : 'Criar nova conta de família'}
-                    </span>
+                <form onSubmit={handleAuth} className="p-4 rounded-[3px] bg-[#161413] border border-[#3d3a39] flex flex-col gap-4 font-mono">
+                  {/* Abas Alternadoras de Autenticação */}
+                  <div className="grid grid-cols-2 p-0.5 bg-[#101010] border border-[#3d3a39] rounded-[3px] text-xs">
                     <button
                       type="button"
-                      onClick={() => setModoAuth(modoAuth === 'login' ? 'cadastro' : 'login')}
-                      className="text-xs text-[#00FF87] hover:underline cursor-pointer"
+                      onClick={() => { setModoAuth('login'); setMensagemErro(''); }}
+                      className={`py-1.5 rounded-[2px] transition cursor-pointer text-center ${
+                        modoAuth === 'login'
+                          ? 'bg-[#fafafa] text-[#101010]'
+                          : 'text-[#8a8380] hover:text-[#eeeeee]'
+                      }`}
                     >
-                      {modoAuth === 'login' ? 'Não tem conta? Cadastrar' : 'Já tem conta? Entrar'}
+                      ENTRAR
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setModoAuth('cadastro'); setMensagemErro(''); }}
+                      className={`py-1.5 rounded-[2px] transition cursor-pointer text-center ${
+                        modoAuth === 'cadastro'
+                          ? 'bg-[#fafafa] text-[#101010]'
+                          : 'text-[#8a8380] hover:text-[#eeeeee]'
+                      }`}
+                    >
+                      CRIAR CONTA
                     </button>
                   </div>
 
-                  <div className="space-y-3">
+                  <div className="space-y-3 font-sans">
                     <div>
-                      <label className="text-xs text-[#9CA3AF] block mb-1">E-mail</label>
+                      <label className="font-mono text-[11px] text-[#8a8380] block mb-1 uppercase">E-mail</label>
                       <div className="relative">
-                        <Mail className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-2.5" />
+                        <Mail className="w-4 h-4 text-[#8a8380] absolute left-3 top-2.5" />
                         <input
                           type="email"
                           required
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder="seuemail@exemplo.com"
-                          className="w-full bg-[#07080b] border border-[#1e2333] focus:border-[#00FF87] rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:outline-none"
+                          className="w-full bg-[#101010] border border-[#3d3a39] focus:border-[#eeeeee] rounded-[3px] pl-9 pr-3 py-1.5 text-xs text-[#eeeeee] focus:outline-none font-mono"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-xs text-[#9CA3AF] block mb-1">Senha</label>
+                      <label className="font-mono text-[11px] text-[#8a8380] block mb-1 uppercase">Senha</label>
                       <div className="relative">
-                        <Lock className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-2.5" />
+                        <Lock className="w-4 h-4 text-[#8a8380] absolute left-3 top-2.5" />
                         <input
                           type="password"
                           required
                           value={senha}
                           onChange={(e) => setSenha(e.target.value)}
                           placeholder="••••••••"
-                          className="w-full bg-[#07080b] border border-[#1e2333] focus:border-[#00FF87] rounded-lg pl-9 pr-3 py-2 text-xs text-white focus:outline-none"
+                          className="w-full bg-[#101010] border border-[#3d3a39] focus:border-[#eeeeee] rounded-[3px] pl-9 pr-3 py-1.5 text-xs text-[#eeeeee] focus:outline-none font-mono"
                         />
                       </div>
                     </div>
@@ -382,9 +420,9 @@ export function ModalConexaoNuvem({
                   <button
                     type="submit"
                     disabled={carregando}
-                    className="w-full py-2.5 rounded-lg bg-[#00FF87] hover:bg-[#00FF87]/90 text-[#07080b] font-bold text-xs shadow-lg shadow-[#00FF87]/20 transition disabled:opacity-50 cursor-pointer"
+                    className="w-full py-2 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] font-mono text-xs uppercase transition disabled:opacity-50 cursor-pointer"
                   >
-                    {carregando ? 'Processando...' : modoAuth === 'login' ? 'Entrar e Sincronizar' : 'Criar Conta e Sincronizar'}
+                    {carregando ? 'PROCESSANDO...' : modoAuth === 'login' ? 'ENTRAR E SINCRONIZAR' : 'CRIAR CONTA E SINCRONIZAR'}
                   </button>
                 </form>
               )}

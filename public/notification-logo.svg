@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- 4-pointed Star Outline with Rounded Caps and Concave Curves -->
+  <path d="M 256 108 C 296 216 296 216 404 256 C 296 296 296 296 256 404 C 216 296 216 296 108 256 C 216 216 216 216 256 108 Z" 
+        stroke="#00FF87" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Top Right Plus Sign -->
+  <line x1="395" y1="138" x2="395" y2="202" stroke="#00FF87" stroke-width="30" stroke-linecap="round"/>
+  <line x1="363" y1="170" x2="427" y2="170" stroke="#00FF87" stroke-width="30" stroke-linecap="round"/>
+  <!-- Bottom Left Filled Circle Dot -->
+  <circle cx="130" cy="378" r="24" fill="#00FF87"/>
+</svg>

@@ -1,289 +1,824 @@
-import type { CategoriaOrcamentaria, EstadoFinanceiro } from '../types/finance';
-import { CATEGORIAS_CONFIG, formatarBRL } from './calculations';
+import type { CategoriaOrcamentaria, EstadoFinanceiro, ItemLancamento } from '../types/finance';
+import { CATEGORIAS_CONFIG, formatarBRL, calcularOrcamento } from './calculations';
 
 export interface AssistantActionResult {
   mensagemResposta: string;
   sucesso: boolean;
   acaoExecutada?: string;
+  itensModificados?: number;
 }
 
-// Dicionário semântico para classificação automática de categorias
-const DICIONARIO_CATEGORIAS: Record<CategoriaOrcamentaria, { palavrasChave: string[]; subcategoriaPadrao: string }> = {
-  fixas: {
-    palavrasChave: [
-      'aluguel', 'condomínio', 'condominio', 'imobiliária', 'imobiliaria', 'prestação da casa',
-      'luz', 'energia', 'enel', 'cpfl', 'água', 'agua', 'sabesp', 'esgoto',
-      'gás', 'gas', 'internet', 'fibra', 'celular', 'telecomunicações', 'telecom', 'plano',
-      'mercado', 'supermercado', 'compras do mês', 'alimentação básica', 'açougue', 'feira',
-      'saúde', 'saude', 'plano de saúde', 'convênio', 'farmácia', 'farmacia', 'remédio', 'remedio',
-      'escola', 'faculdade', 'colégio', 'mensalidade escolar', 'transporte', 'combustível', 'gasolina', 'ipva', 'seguro'
-    ],
-    subcategoriaPadrao: 'Moradia'
-  },
-  superfluos: {
-    palavrasChave: [
-      'restaurante', 'jantar', 'almoço', 'almoco', 'lanche', 'pizza', 'hambúrguer', 'hamburguer', 'sushi', 'rodízio',
-      'ifood', 'delivery', 'rappi', 'aiqfome', 'padaria', 'café', 'starbucks', 'sorvete', 'açaí', 'acai',
-      'netflix', 'spotify', 'amazon', 'prime', 'disney', 'hbo', 'max', 'streaming', 'youtube',
-      'cinema', 'show', 'teatro', 'festa', 'balada', 'bar', 'cerveja', 'happy hour', 'bebida',
-      'shopping', 'roupa', 'vestuário', 'vestuario', 'tênis', 'tenis', 'sapato', 'camisa', 'calça',
-      'viagem', 'passagem', 'hotel', 'pousada', 'airbnb', 'passeio', 'eletrônico', 'videogame', 'game', 'jogo', 'steam', 'uber'
-    ],
-    subcategoriaPadrao: 'Restaurantes'
-  },
-  investimentos: {
-    palavrasChave: [
-      'cdb', 'lci', 'lca', 'tesouro', 'selic', 'ipca', 'prefixado', 'renda fixa', 'poupança', 'poupanca',
-      'ação', 'acao', 'ações', 'acoes', 'fii', 'fiis', 'fundos imobiliários', 'fundos imobiliarios', 'bovespa', 'b3',
-      'cripto', 'bitcoin', 'btc', 'ethereum', 'eth', 'reserva', 'emergência', 'emergencia', 'oportunidade',
-      'aporte', 'investimento', 'investir', 'guardar', 'aplicação', 'aplicacao', 'corretora', 'rico', 'clear', 'xp', 'nuinvest'
-    ],
-    subcategoriaPadrao: 'CDB Liquidez'
+export interface AssistantActions {
+  adicionarItem: (item: {
+    titulo: string;
+    valor: number;
+    categoria: CategoriaOrcamentaria;
+    tipoDetalhado: string;
+    vencimento: string;
+    pago: boolean;
+  }) => void;
+  atualizarItem: (id: string, updates: Partial<ItemLancamento>) => void;
+  removerItem: (id: string) => void;
+  alternarPago: (id: string) => void;
+  atualizarRenda: (novaRenda: number) => void;
+  atualizarMetas: (novasMetas: { fixas?: number; superfluos?: number; investimentos?: number }) => void;
+}
+
+// =========================================================================
+// 1. DICIONÁRIO SEMÂNTICO HIPER-EXPANDIDO EM PORTUGUÊS (600+ TERMOS E SINÔNIMOS)
+// =========================================================================
+
+export const DICIONARIO_CATEGORIAS: Record<
+  CategoriaOrcamentaria,
+  {
+    subcategorias: Record<string, string[]>;
+    palavrasGerais: string[];
+    subcategoriaPadrao: string;
   }
+> = {
+  fixas: {
+    subcategoriaPadrao: 'Moradia',
+    palavrasGerais: [
+      'fixo', 'fixa', 'essencial', 'essenciais', 'obrigatória', 'obrigatoria', 'obrigatório',
+      'básico', 'basico', 'básica', 'basica', 'conta', 'boleto', 'mensalidade', 'fatura básica', 'tarifa'
+    ],
+    subcategorias: {
+      'Moradia': [
+        'aluguel', 'condomínio', 'condominio', 'prestação', 'prestacao', 'financiamento imobiliário',
+        'financiamento da casa', 'iptu', 'seguro residencial', 'imobiliária', 'imobiliaria', 'quintoandar',
+        'loft', 'diarista', 'faxina', 'zeladoria', 'reforma da casa', 'manutenção residencial', 'reparo',
+        'encanador', 'eletricista', 'chaveiro', 'pintor', 'marceneiro', 'taxa de lixo', 'sindico'
+      ],
+      'Energia': [
+        'luz', 'energia', 'eletricidade', 'enel', 'cpfl', 'cemig', 'copel', 'eletropaulo', 'energisa',
+        'celesc', 'coelba', 'light', 'conta de luz', 'fatura de luz',
+        'gás', 'gas', 'botijão', 'botijao', 'comgás', 'comgas', 'ultragaz', 'supergasbras', 'liquigas'
+      ],
+      'Água': [
+        'água', 'agua', 'sabesp', 'copasa', 'sanepar', 'caesb', 'compesa', 'embasa', 'saae',
+        'esgoto', 'saneamento', 'conta de água', 'fatura de água'
+      ],
+      'Telecomunicações': [
+        'internet', 'fibra', 'wi-fi', 'wifi', 'banda larga', 'celular', 'plano de celular',
+        'claro', 'vivo', 'tim', 'oi', 'recarga', 'telefone', 'fatura celular', 'fatura telefone'
+      ],
+      'Alimentação Básica': [
+        'mercado', 'supermercado', 'compras do mês', 'alimentação básica', 'açougue', 'acougue',
+        'feira', 'hortifruti', 'sacolão', 'sacolao', 'atacadão', 'atacadao', 'assaí', 'assai',
+        'carrefour', 'pão de açúcar', 'extra', 'dia', 'tenda', 'roldão', 'manteiga', 'arroz',
+        'feijão', 'leite', 'café moído', 'cesta básica', 'cesta basica'
+      ],
+      'Saúde': [
+        'saúde', 'saude', 'plano de saúde', 'convênio', 'convenio', 'unimed', 'sulamerica', 'sul américa',
+        'bradesco saúde', 'notredame', 'intermédica', 'amil', 'hapvida', 'farmácia', 'farmacia',
+        'drogaria', 'drogasil', 'raia', 'droga raia', 'pacheco', 'são paulo', 'panvel', 'remédio',
+        'remedio', 'medicamento', 'dentista', 'consulta', 'exame', 'terapia', 'psicólogo', 'psiquiatra',
+        'oftalmo', 'óculos', 'fisioterapia'
+      ],
+      'Educação': [
+        'escola', 'faculdade', 'colégio', 'colegio', 'mensalidade escolar', 'curso', 'pós', 'pos',
+        'graduação', 'livro didático', 'material escolar', 'creche', 'universidade', 'apostila'
+      ],
+      'Transporte Essencial': [
+        'combustível', 'combustivel', 'gasolina', 'etanol', 'álcool', 'alcohol', 'diesel', 'gnv',
+        'posto', 'ipiranga', 'shell', 'br', 'ipva', 'seguro do carro', 'seguro auto', 'seguro moto',
+        'mecânico', 'mecanico', 'revisão', 'oficina', 'troca de óleo', 'pneu', 'pedágio', 'pedagio',
+        'sem parar', 'veloe', 'conectcar', 'bilhete único', 'passe', 'ônibus', 'onibus', 'metrô', 'metro',
+        'estacionamento mensal'
+      ],
+      'Pet & Animais': [
+        'pet', 'pet shop', 'petshop', 'ração', 'racao', 'veterinário', 'veterinario', 'vacina cachorro',
+        'vacina gato', 'cachorro', 'gato', 'cobasi', 'petz', 'banho e tosa'
+      ],
+    },
+  },
+
+  superfluos: {
+    subcategoriaPadrao: 'Restaurantes',
+    palavrasGerais: [
+      'supérfluo', 'superfluo', 'lazer', 'estilo de vida', 'diversão', 'diversao',
+      'besteira', 'passeio', 'luxo', 'vontade', 'gastos variáveis', 'variaveis'
+    ],
+    subcategorias: {
+      'Restaurantes': [
+        'restaurante', 'almoço', 'almoco', 'jantar', 'lanche', 'pizza', 'pizzaria', 'hambúrguer',
+        'hamburguer', 'burguer', 'mc donalds', 'mcdonalds', 'bk', 'burger king', 'subway', 'bobs',
+        'sushi', 'japonês', 'japones', 'rodízio', 'rodizio', 'outback', 'churrascaria', 'bar',
+        'barzinho', 'boteco', 'cerveja', 'chope', 'chopp', 'vinho', 'drinks', 'happy hour',
+        'padaria gourmet', 'café', 'cafe', 'starbucks', 'sorvete', 'açaí', 'acai', 'doceria',
+        'pastel', 'esfirra', 'habibs', 'churrasco'
+      ],
+      'Delivery': [
+        'ifood', 'delivery', 'rappi', 'aiqfome', 'entrega', 'zé delivery', 'ze delivery', 'tele entrega',
+        'marmita', 'quentinha'
+      ],
+      'Streaming & Assinaturas': [
+        'netflix', 'spotify', 'amazon prime', 'prime video', 'disney', 'disney+', 'hbo', 'max',
+        'hbo max', 'youtube premium', 'streaming', 'globoplay', 'apple tv', 'deezer', 'crunchyroll',
+        'paramount', 'twitch', 'chatgpt', 'openai', 'icloud', 'google one', 'canva', 'adobe'
+      ],
+      'Vestuário & Moda': [
+        'roupa', 'roupas', 'vestuário', 'vestuario', 'tênis', 'tenis', 'sapato', 'sandália', 'bota',
+        'camisa', 'camiseta', 'calça', 'calca', 'bermuda', 'vestido', 'casaco', 'jaqueta', 'shopping',
+        'loja', 'zara', 'renner', 'riachuelo', 'c&a', 'shein', 'nike', 'adidas', 'marisa', 'centauro'
+      ],
+      'Cuidados Pessoais': [
+        'salão', 'salao', 'cabeleireiro', 'barbearia', 'barbeiro', 'manicure', 'pedicure', 'estética',
+        'estetica', 'sobrancelha', 'depilação', 'perfume', 'maquiagem', 'boticário', 'boticario',
+        'natura', 'sephora', 'skincare', 'massagem', 'spa', 'cosméticos'
+      ],
+      'Lazer & Viagens': [
+        'viagem', 'passagem aérea', 'voo', 'hotel', 'pousada', 'airbnb', 'mala', 'cinema', 'cinemark',
+        'ingresso', 'show', 'concerto', 'festival', 'teatro', 'museu', 'festa', 'balada', 'parque',
+        'clube', 'uber', '99', '99pop', 'táxi', 'taxi', 'corrida'
+      ],
+      'Eletrônicos & Games': [
+        'videogame', 'game', 'jogo', 'playstation', 'ps5', 'ps4', 'xbox', 'nintendo', 'switch', 'steam',
+        'headset', 'mouse', 'teclado gamer', 'celular novo', 'gadget', 'eletrônico', 'eletronico',
+        'fone de ouvido', 'airpods', 'jbl', 'caixa de som'
+      ],
+      'Esportes & Fitness': [
+        'academia', 'smart fit', 'smartfit', 'bluefit', 'bio ritmo', 'panobianco', 'gympass',
+        'totalpass', 'crossfit', 'pilates', 'natação', 'personal', 'personal trainer', 'whey',
+        'creatina', 'suplemento'
+      ],
+      'Compras Gerais': [
+        'compras online', 'mercado livre', 'shopee', 'aliexpress', 'amazon compras', 'presente', 'decoração'
+      ],
+    },
+  },
+
+  investimentos: {
+    subcategoriaPadrao: 'CDB Liquidez',
+    palavrasGerais: [
+      'investir', 'investimento', 'investi', 'aporte', 'aportar', 'aportes', 'guardar', 'guardei',
+      'poupar', 'poupei', 'aplicação', 'aplicacao', 'apliquei', 'patrimônio', 'patrimonio',
+      'futuro', 'poupança', 'poupanca', 'liberdade financeira'
+    ],
+    subcategorias: {
+      'CDB Liquidez': [
+        'cdb', 'cdb liquidez', 'cdb 100%', 'caixinha', 'nubank caixinha', 'porquinho',
+        'inter poupança', 'sofisa', 'banco c6', 'c6 bank', 'lci', 'lca', 'cri', 'cra', 'debênture'
+      ],
+      'Tesouro Direto': [
+        'tesouro', 'selic', 'tesouro selic', 'ipca', 'tesouro ipca', 'prefixado', 'renda fixa', 'títulos'
+      ],
+      'Reserva de Emergência': [
+        'reserva', 'emergência', 'emergencia', 'fundo de emergência', 'segurança financeira'
+      ],
+      'Ações & FIIs': [
+        'ação', 'acao', 'ações', 'acoes', 'fii', 'fiis', 'fundo imobiliário', 'fundos imobiliarios',
+        'bovespa', 'b3', 'bolsa', 'dividendo', 'dividendos', 'etf', 'ivvb11', 'smal11', 'renda variável',
+        'itaúsa', 'vale', 'petrobras'
+      ],
+      'Criptoativos': [
+        'bitcoin', 'btc', 'cripto', 'crypto', 'ethereum', 'eth', 'binance', 'criptomoeda', 'satoshi', 'solana'
+      ],
+      'Corretoras & Previdência': [
+        'xp', 'rico', 'clear', 'nuinvest', 'btg', 'btg pactual', 'previdência', 'previdencia', 'pgbl', 'vgbl'
+      ],
+    },
+  },
 };
 
-// Extrair valor monetário em texto (ex: "80 reais", "R$ 3.500", "150,50", "400")
-function extrairValorMonetario(texto: string): number | null {
-  const limpo = texto.toLowerCase()
-    .replace(/r\$\s?/g, '')
-    .replace(/\s?reais/g, '');
+// =========================================================================
+// 2. PARSER AVANÇADO DE NÚMEROS, GÍRIAS E MOEDAS EM PORTUGUÊS
+// =========================================================================
 
-  const regexNumero = /(\d+(?:[.,]\d{1,2})?)/g;
-  const matches = limpo.match(regexNumero);
-  if (!matches) return null;
+const MAPA_EXTENSO: Record<string, number> = {
+  zero: 0, um: 1, uma: 1, dois: 2, duas: 2, tres: 3, três: 3, quatro: 4, cinco: 5,
+  seis: 6, sete: 7, oito: 8, nove: 9, dez: 10, onze: 11, doze: 12, treze: 13,
+  quatorze: 14, catorze: 14, quinze: 15, dezesseis: 16, dezessete: 17, dezoito: 18, dezenove: 19,
+  vinte: 20, trinta: 30, quarenta: 40, cinquenta: 50, sessenta: 60, setenta: 70, oitenta: 80, noventa: 90,
+  cem: 100, cento: 100, duzentos: 200, duzentas: 200, trezentos: 300, trezentas: 300,
+  quatrocentos: 400, quatrocentas: 400, quinhentos: 500, quinhentas: 500,
+  seiscentos: 600, seiscentas: 600, setecentos: 700, setecentas: 700,
+  oitocentos: 800, oitocentas: 800, novecentos: 900, novecentas: 900,
+  mil: 1000,
+};
 
-  // Pega o primeiro ou maior número detectado
-  for (const m of matches) {
-    const normalizado = m.replace(',', '.');
-    const valor = parseFloat(normalizado);
-    if (!isNaN(valor) && valor > 0) return valor;
+/**
+ * Converte qualquer representação textual de valor em número float válido.
+ * Suporta formatos numéricos, abreviações (k/mil), gírias populares (conto, pau, mangos, pila)
+ * e números por extenso simples ou compostos ("dois mil e quinhentos", "15 conto e cinquenta").
+ */
+export function normalizarValorMonetario(texto: string): number | null {
+  if (!texto) return null;
+  const t = texto.toLowerCase().trim();
+
+  // 1. Suporte a compostos "X mil e Y" (ex: "2 mil e quinhentos" -> 2500, "10 mil e 500" -> 10500)
+  const regexMilComposto = /(\d+(?:[.,]\d+)?)\s*mil(?:\s+e\s+(\d+|[a-zá-ú]+))?/i;
+  const matchMilComposto = t.match(regexMilComposto);
+  if (matchMilComposto) {
+    const baseMil = parseFloat(matchMilComposto[1].replace(',', '.'));
+    let adicao = 0;
+    if (matchMilComposto[2]) {
+      const parte2 = matchMilComposto[2].trim();
+      const numDireto = parseFloat(parte2);
+      if (!isNaN(numDireto)) {
+        adicao = numDireto;
+      } else if (MAPA_EXTENSO[parte2]) {
+        adicao = MAPA_EXTENSO[parte2];
+      }
+    }
+    if (!isNaN(baseMil) && baseMil > 0) {
+      return Math.round((baseMil * 1000 + adicao) * 100) / 100;
+    }
   }
+
+  // 2. Suporte a sufixo "k" (ex: "8k" -> 8000, "3.5k" -> 3500, "12k e 500" -> 12500)
+  const regexKComposto = /(\d+(?:[.,]\d+)?)\s*k(?:\s+e\s+(\d+))?/i;
+  const matchK = t.match(regexKComposto);
+  if (matchK) {
+    const baseK = parseFloat(matchK[1].replace(',', '.'));
+    const adicao = matchK[2] ? parseFloat(matchK[2]) : 0;
+    if (!isNaN(baseK) && baseK > 0) {
+      return Math.round((baseK * 1000 + (isNaN(adicao) ? 0 : adicao)) * 100) / 100;
+    }
+  }
+
+  // 3. Suporte a gírias brasileiras com centavos opcionais (ex: "50 conto e 50", "100 paus", "25 pila")
+  const regexGirias = /(\d+(?:[.,]\d+)?)\s*(?:contos?|paus?|mangos?|pilas?|pratas?|reais|real)(?:\s+e\s+(\d{1,2}))?/i;
+  const matchGiria = t.match(regexGirias);
+  if (matchGiria) {
+    const base = parseFloat(matchGiria[1].replace('.', '').replace(',', '.'));
+    const centavos = matchGiria[2] ? parseFloat(matchGiria[2]) / 100 : 0;
+    if (!isNaN(base) && base > 0) return Math.round((base + centavos) * 100) / 100;
+  }
+
+  // 4. Formato monetário brasileiro padrão (R$ 1.500,50 ou 1500,50)
+  const limpo = t.replace(/r\$\s?/gi, '');
+  const matchBR = limpo.match(/(\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?)/);
+  if (matchBR) {
+    const num = parseFloat(matchBR[1].replace(/\./g, '').replace(',', '.'));
+    if (!isNaN(num) && num > 0) return Math.round(num * 100) / 100;
+  }
+
+  // 5. Números simples decimais ou inteiros (ex: 150,50 ou 150.50 ou 150)
+  const matchSimples = limpo.match(/(\d+(?:[.,]\d{1,2})?)/);
+  if (matchSimples) {
+    const num = parseFloat(matchSimples[1].replace(',', '.'));
+    if (!isNaN(num) && num > 0) return Math.round(num * 100) / 100;
+  }
+
+  // 6. Números por extenso compostos (ex: "mil e duzentos", "trezentos e cinquenta")
+  const palavras = t.split(/[\s,]+/);
+  let somaExtenso = 0;
+  let valorCorrente = 0;
+  let encontrouNumero = false;
+
+  for (const p of palavras) {
+    if (MAPA_EXTENSO[p] !== undefined) {
+      encontrouNumero = true;
+      const val = MAPA_EXTENSO[p];
+      if (val === 1000) {
+        valorCorrente = (valorCorrente === 0 ? 1 : valorCorrente) * 1000;
+        somaExtenso += valorCorrente;
+        valorCorrente = 0;
+      } else {
+        valorCorrente += val;
+      }
+    }
+  }
+  somaExtenso += valorCorrente;
+
+  if (encontrouNumero && somaExtenso > 0) {
+    return somaExtenso;
+  }
+
   return null;
 }
 
-// Detectar categoria por palavras-chave
-export function detectarCategoriaPorTexto(texto: string): { categoria: CategoriaOrcamentaria; subcategoria: string } {
-  const minusculo = texto.toLowerCase();
+// =========================================================================
+// 3. CLASSIFICAÇÃO SEMÂNTICA AUTOMÁTICA DE CATEGORIA E SUBCATEGORIA
+// =========================================================================
 
-  // Verifica primeiro Investimentos
-  for (const kw of DICIONARIO_CATEGORIAS.investimentos.palavrasChave) {
-    if (minusculo.includes(kw)) {
-      return { categoria: 'investimentos', subcategoria: 'CDB Liquidez' };
+export function identificarCategoriaESubcategoria(texto: string): {
+  categoria: CategoriaOrcamentaria;
+  subcategoria: string;
+} {
+  const t = texto.toLowerCase();
+
+  // Ordem de prioridade: 1. Investimentos, 2. Fixas, 3. Supérfluos
+  for (const cat of ['investimentos', 'fixas', 'superfluos'] as CategoriaOrcamentaria[]) {
+    const catConfig = DICIONARIO_CATEGORIAS[cat];
+
+    // Checagem de subcategorias específicas com termos compostos ou palavras inteiras
+    for (const [subNome, palavras] of Object.entries(catConfig.subcategorias)) {
+      for (const p of palavras) {
+        const regex = new RegExp(`\\b${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        if (regex.test(t) || t.includes(p)) {
+          return { categoria: cat, subcategoria: subNome };
+        }
+      }
+    }
+
+    // Checagem de palavras gerais do pilar
+    for (const p of catConfig.palavrasGerais) {
+      const regex = new RegExp(`\\b${p}\\b`, 'i');
+      if (regex.test(t)) {
+        return { categoria: cat, subcategoria: catConfig.subcategoriaPadrao };
+      }
     }
   }
 
-  // Verifica Supérfluos
-  for (const kw of DICIONARIO_CATEGORIAS.superfluos.palavrasChave) {
-    if (minusculo.includes(kw)) {
-      const sub = kw.includes('streaming') || kw.includes('netflix') || kw.includes('spotify')
-        ? 'Streaming'
-        : kw.includes('ifood') || kw.includes('delivery')
-        ? 'Delivery'
-        : kw.includes('roupa') || kw.includes('vestuário')
-        ? 'Vestuário'
-        : 'Restaurantes';
-      return { categoria: 'superfluos', subcategoria: sub };
-    }
-  }
-
-  // Verifica Fixas
-  for (const kw of DICIONARIO_CATEGORIAS.fixas.palavrasChave) {
-    if (minusculo.includes(kw)) {
-      const sub = kw.includes('aluguel') || kw.includes('imobili')
-        ? 'Moradia'
-        : kw.includes('luz') || kw.includes('energia')
-        ? 'Energia'
-        : kw.includes('água') || kw.includes('agua')
-        ? 'Água'
-        : kw.includes('internet') || kw.includes('celular')
-        ? 'Telecomunicações'
-        : 'Alimentação Básica';
-      return { categoria: 'fixas', subcategoria: sub };
-    }
-  }
-
-  // Padrão quando não houver correspondência exata
-  return { categoria: 'superfluos', subcategoria: 'Outros' };
+  // Supérfluos como fallback seguro
+  return { categoria: 'superfluos', subcategoria: 'Restaurantes' };
 }
+
+// =========================================================================
+// 4. EXTRAÇÃO INTELIGENTE DO TÍTULO DO LANÇAMENTO
+// =========================================================================
+
+const STOPWORDS_LANCAMENTO = [
+  'adicionar', 'adiciona', 'adicionar aí', 'lançar', 'lanca', 'lance', 'novo', 'nova',
+  'despesa', 'gasto', 'gastei', 'comprei', 'paguei', 'quitei', 'coloque', 'coloca', 'anota', 'anote',
+  'valor', 'no', 'na', 'nos', 'nas', 'de', 'do', 'da', 'dos', 'das', 'por', 'pra', 'para',
+  'em', 'um', 'uma', 'uns', 'umas', 'reais', 'real', 'conto', 'contos', 'pau', 'paus',
+  'mango', 'mangos', 'pila', 'pilas', 'hoje', 'ontem', 'aqui', 'mais', 'favor', 'por favor',
+  'r$', 'pix', 'cartão', 'debito', 'débito', 'credito', 'crédito', 'comprei um', 'comprei uma',
+  'paguei o', 'paguei a', 'ia', 'bot', 'assistente', 'anota aí', 'bota aí', 'registra'
+];
+
+export function extrairTituloLimpo(texto: string, subcategoriaPadrao: string): string {
+  let limpo = texto.toLowerCase();
+
+  // Remove valores numéricos e marcadores de quantia
+  limpo = limpo.replace(/r\$\s?/gi, '');
+  limpo = limpo.replace(/\b\d+(?:[.,]\d+)?\s*(?:k|mil|contos?|paus?|mangos?|pilas?|pratas?|reais|real)?\b/gi, '');
+
+  // Remove stopwords conversacionais
+  for (const sw of STOPWORDS_LANCAMENTO) {
+    const reg = new RegExp(`\\b${sw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+    limpo = limpo.replace(reg, ' ');
+  }
+
+  // Normaliza pontuação e espaços
+  limpo = limpo.replace(/[.,;!?]/g, ' ').replace(/\s+/g, ' ').trim();
+
+  if (limpo.length >= 2) {
+    // Capitaliza a primeira letra de cada palavra
+    return limpo
+      .split(' ')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
+
+  return subcategoriaPadrao || 'Gasto Geral';
+}
+
+// =========================================================================
+// 5. MOTOR MULTI-INTENT DO ASSISTENTE FINANCEIRO COM IA
+// =========================================================================
 
 export function processarComandoAssistente(
   comando: string,
   estadoAtual: EstadoFinanceiro,
-  acoes: {
-    adicionarItem: (item: { titulo: string; valor: number; categoria: CategoriaOrcamentaria; tipoDetalhado: string; vencimento: string; pago: boolean }) => void;
-    atualizarItem: (id: string, updates: Record<string, any>) => void;
-    removerItem: (id: string) => void;
-    alternarPago: (id: string) => void;
-    atualizarRenda: (novaRenda: number) => void;
-    atualizarMetas: (novasMetas: { fixas?: number; superfluos?: number; investimentos?: number }) => void;
-  }
+  acoes: AssistantActions
 ): AssistantActionResult {
-  const cmd = comando.toLowerCase().trim();
-
-  // 1. Comando: Alterar / Definir Renda Familiar
-  // Exemplos: "minha renda aumentou para 15000", "mudar renda para 14.500", "definir renda 13000"
-  if (cmd.includes('renda') || cmd.includes('salário') || cmd.includes('salario') || cmd.includes('ganho')) {
-    const valor = extrairValorMonetario(cmd);
-    if (valor) {
-      acoes.atualizarRenda(valor);
-      return {
-        sucesso: true,
-        acaoExecutada: 'ATUALIZAR_RENDA',
-        mensagemResposta: `Renda familiar atualizada com sucesso para ${formatarBRL(valor)}! Todos os pilares e tetos 50-30-20 foram recalculados.`,
-      };
-    }
-  }
-
-  // 2. Comando: Alterar Metas Orçamentárias
-  // Exemplos: "mudar meta de fixas para 45%", "definir investimentos em 25%", "meta de superfluos 25"
-  if (cmd.includes('meta') && (cmd.includes('fixa') || cmd.includes('supérfl') || cmd.includes('superfl') || cmd.includes('invest') || cmd.includes('aporte'))) {
-    const valor = extrairValorMonetario(cmd);
-    if (valor && valor >= 1 && valor <= 100) {
-      if (cmd.includes('fixa')) {
-        acoes.atualizarMetas({ fixas: valor });
-        return {
-          sucesso: true,
-          acaoExecutada: 'ATUALIZAR_META',
-          mensagemResposta: `Meta do pilar de Contas Fixas atualizada para ${valor}%.`,
-        };
-      }
-      if (cmd.includes('supérfl') || cmd.includes('superfl')) {
-        acoes.atualizarMetas({ superfluos: valor });
-        return {
-          sucesso: true,
-          acaoExecutada: 'ATUALIZAR_META',
-          mensagemResposta: `Meta do pilar de Gastos Supérfluos atualizada para ${valor}%.`,
-        };
-      }
-      if (cmd.includes('invest') || cmd.includes('aporte')) {
-        acoes.atualizarMetas({ investimentos: valor });
-        return {
-          sucesso: true,
-          acaoExecutada: 'ATUALIZAR_META',
-          mensagemResposta: `Meta do pilar de Investimentos atualizada para ${valor}%.`,
-        };
-      }
-    }
-  }
-
-  // 3. Comando: Marcar despesa como paga ou pendente
-  // Exemplos: "marcar internet como paga", "pagar aluguel", "marcar mercado como pendente"
-  if (cmd.includes('paga') || cmd.includes('pago') || cmd.includes('quitar') || cmd.includes('pendente')) {
-    const pendente = cmd.includes('pendente') || cmd.includes('não pago') || cmd.includes('desmarcar');
-    // Encontrar item correspondente no ledger
-    const itemEncontrado = estadoAtual.itens.find((it) => {
-      const nomeLimpo = it.titulo.toLowerCase();
-      const palavras = cmd.split(' ');
-      return palavras.some((p) => p.length > 3 && nomeLimpo.includes(p));
-    });
-
-    if (itemEncontrado) {
-      acoes.atualizarItem(itemEncontrado.id, { pago: !pendente });
-      return {
-        sucesso: true,
-        acaoExecutada: 'ALTERAR_STATUS_PAGAMENTO',
-        mensagemResposta: `O lançamento "${itemEncontrado.titulo}" foi marcado como ${pendente ? 'A Pagar (Pendente)' : 'Pago (Liquidado)'}.`,
-      };
-    }
-  }
-
-  // 4. Comando: Excluir / Remover despesa
-  // Exemplos: "excluir streaming", "apagar restaurante", "remover despesa de luz"
-  if (cmd.includes('excluir') || cmd.includes('apagar') || cmd.includes('remover') || cmd.includes('deletar')) {
-    const itemEncontrado = estadoAtual.itens.find((it) => {
-      const nomeLimpo = it.titulo.toLowerCase();
-      const palavras = cmd.split(' ');
-      return palavras.some((p) => p.length > 3 && !['excluir', 'apagar', 'remover', 'deletar', 'despesa'].includes(p) && nomeLimpo.includes(p));
-    });
-
-    if (itemEncontrado) {
-      acoes.removerItem(itemEncontrado.id);
-      return {
-        sucesso: true,
-        acaoExecutada: 'REMOVER_ITEM',
-        mensagemResposta: `O lançamento "${itemEncontrado.titulo}" (${formatarBRL(itemEncontrado.valor)}) foi removido com sucesso.`,
-      };
-    }
-  }
-
-  // 5. Comando: Alterar valor de despesa existente
-  // Exemplos: "mudar aluguel para 3500", "alterar energia para 420", "ajustar mercado para 1600"
-  if (cmd.includes('mudar') || cmd.includes('alterar') || cmd.includes('ajustar') || cmd.includes('trocar')) {
-    const valor = extrairValorMonetario(cmd);
-    if (valor) {
-      const itemEncontrado = estadoAtual.itens.find((it) => {
-        const nomeLimpo = it.titulo.toLowerCase();
-        const palavras = cmd.split(' ');
-        return palavras.some((p) => p.length > 3 && !['mudar', 'alterar', 'ajustar', 'trocar', 'para'].includes(p) && nomeLimpo.includes(p));
-      });
-
-      if (itemEncontrado) {
-        acoes.atualizarItem(itemEncontrado.id, { valor });
-        return {
-          sucesso: true,
-          acaoExecutada: 'EDITAR_VALOR',
-          mensagemResposta: `O valor de "${itemEncontrado.titulo}" foi alterado de ${formatarBRL(itemEncontrado.valor)} para ${formatarBRL(valor)}.`,
-        };
-      }
-    }
-  }
-
-  // 6. Comando: Adicionar nova despesa / aporte com categorização automática
-  // Exemplos: "adicionar restaurante 150", "gastei 80 reais no mercado", "comprei remédio por 65", "novo cdb de 500 reais"
-  const valorDetectado = extrairValorMonetario(cmd);
-  if (valorDetectado && valorDetectado > 0) {
-    const { categoria, subcategoria } = detectarCategoriaPorTexto(cmd);
-    
-    // Tentar extrair um título descritivo do comando
-    let tituloLimpo = cmd
-      .replace(/adicionar|adiciona|lançar|lance|novo|nova|despesa|gastei|comprei|coloque|no|na|de|por|reais|r\$|\d+(?:[.,]\d+)?/gi, '')
-      .trim();
-
-    if (tituloLimpo.length < 3) {
-      tituloLimpo = subcategoria || (categoria === 'fixas' ? 'Conta Fixa' : categoria === 'investimentos' ? 'Aporte' : 'Gasto Discricionário');
-    }
-
-    // Capitalizar primeira letra
-    tituloLimpo = tituloLimpo.charAt(0).toUpperCase() + tituloLimpo.slice(1);
-
-    acoes.adicionarItem({
-      titulo: tituloLimpo,
-      valor: valorDetectado,
-      categoria,
-      tipoDetalhado: subcategoria,
-      vencimento: 'Dia 10',
-      pago: false,
-    });
-
-    const nomePilar = CATEGORIAS_CONFIG[categoria].nome;
-
+  const cmd = comando.trim();
+  if (!cmd) {
     return {
-      sucesso: true,
-      acaoExecutada: 'ADICIONAR_ITEM',
-      mensagemResposta: `Lançamento adicionado com sucesso! "${tituloLimpo}" no valor de ${formatarBRL(valorDetectado)} categorizado automaticamente em ${nomePilar} (${subcategoria}).`,
+      sucesso: false,
+      mensagemResposta: 'Por favor, digite ou fale um comando financeiro!',
     };
   }
 
-  // 7. Consulta de Saldo / Resumo
-  // Exemplos: "qual meu saldo", "quanto sobrou", "resumo orçamentário"
-  if (cmd.includes('saldo') || cmd.includes('quanto sobrou') || cmd.includes('resumo') || cmd.includes('status')) {
-    const totalGastos = estadoAtual.itens.reduce((acc, it) => acc + it.valor, 0);
-    const saldoLivre = estadoAtual.rendaFamiliar - totalGastos;
+  const cmdMinusculo = cmd.toLowerCase();
+  const calculos = calcularOrcamento(estadoAtual);
+
+  // -----------------------------------------------------------------------
+  // SAUDAÇÃO & AJUDA GERAL
+  // -----------------------------------------------------------------------
+  if (
+    /^(oi|ol[aá]|bom dia|boa tarde|boa noite|e a[ií]|hey|hello|ajuda|help|o que voc[eê] faz|quem [eé] voc[eê])/i.test(cmdMinusculo)
+  ) {
+    return {
+      sucesso: true,
+      acaoExecutada: 'SAUDACAO',
+      mensagemResposta: `👋 **Olá! Sou o GestorLar IA**, seu copiloto orçamentário.
+Entendo qualquer comando em linguagem natural por texto ou voz! Exemplos que você pode me dizer agora:
+
+• **Lançamentos rápidos:** *"Almoço 35"*, *"50 conto de gasolina"*, *"Paguei 120 de luz"*
+• **Vários de uma vez:** *"Mercado 450, internet 120 e remédio 60"*
+• **Investimentos:** *"Aportei 1.5k no cdb"*, *"Guardei 500 no Tesouro"*
+• **Atualizar Renda:** *"Meu salário aumentou para 12k"*
+• **Metas 50-30-20:** *"Muda a meta de aporte pra 25%"*
+• **Status de Contas:** *"Paguei o aluguel"*, *"Quitei todas as contas"*
+• **Consultas:** *"Qual meu saldo livre?"*, *"Onde gastei mais?"*, *"Contas a pagar"*`,
+    };
+  }
+
+  // -----------------------------------------------------------------------
+  // CONSULTA 1: Onde Gastei Mais? / Maior Despesa
+  // -----------------------------------------------------------------------
+  if (
+    cmdMinusculo.includes('onde gastei mais') ||
+    cmdMinusculo.includes('maior gasto') ||
+    cmdMinusculo.includes('maiores gastos') ||
+    cmdMinusculo.includes('qual o maior gasto') ||
+    cmdMinusculo.includes('onde estou gastando')
+  ) {
+    if (estadoAtual.itens.length === 0) {
+      return {
+        sucesso: true,
+        acaoExecutada: 'CONSULTA_GASTOS',
+        mensagemResposta: '📋 Você ainda não possui nenhum gasto ou despesa lançada neste mês!',
+      };
+    }
+
+    // Ordena do maior para o menor
+    const ordenados = [...estadoAtual.itens].sort((a, b) => b.valor - a.valor);
+    const top3 = ordenados.slice(0, 3);
+    const gastosCat: Record<CategoriaOrcamentaria, number> = {
+      fixas: calculos.totalFixas,
+      superfluos: calculos.totalSuperfluos,
+      investimentos: calculos.totalInvestimentos,
+    };
+    const maiorPilar = (['fixas', 'superfluos', 'investimentos'] as CategoriaOrcamentaria[]).reduce(
+      (max, cat) => (gastosCat[cat] > gastosCat[max] ? cat : max),
+      'fixas' as CategoriaOrcamentaria
+    );
+
+    const listaTop = top3.map((it, idx) => `${idx + 1}º **${it.titulo}**: ${formatarBRL(it.valor)} (${it.tipoDetalhado})`).join('\n');
+
+    return {
+      sucesso: true,
+      acaoExecutada: 'CONSULTA_MAIOR_GASTO',
+      mensagemResposta: `🔍 **Seus Maiores Gastos do Mês:**\n\n${listaTop}\n\n💡 O pilar com maior volume financeiro é **${CATEGORIAS_CONFIG[maiorPilar].nome}** com **${formatarBRL(gastosCat[maiorPilar])}**.`,
+    };
+  }
+
+  // -----------------------------------------------------------------------
+  // CONSULTA 2: Gastos por Categoria Específica
+  // (ex: "quanto gastei com comida", "quanto gastei no mercado", "quanto gastei com supérfluos")
+  // -----------------------------------------------------------------------
+  if (
+    cmdMinusculo.includes('quanto gastei') ||
+    cmdMinusculo.includes('quanto foi gasto') ||
+    cmdMinusculo.includes('total gasto com') ||
+    cmdMinusculo.includes('total em')
+  ) {
+    if (cmdMinusculo.includes('fixa') || cmdMinusculo.includes('essenci')) {
+      const totalFixas = calculos.totalFixas;
+      const tetoFixas = calculos.limiteFixas;
+      return {
+        sucesso: true,
+        acaoExecutada: 'CONSULTA_CATEGORIA',
+        mensagemResposta: `📌 **Contas Fixas & Essenciais:**\n• Total Gasto: **${formatarBRL(totalFixas)}**\n• Meta/Teto (50%): **${formatarBRL(tetoFixas)}**\n• Status: **${totalFixas <= tetoFixas ? '✅ Dentro do limite' : '⚠️ Acima do teto recomendado'}**`,
+      };
+    }
+
+    if (cmdMinusculo.includes('supérfl') || cmdMinusculo.includes('superfl') || cmdMinusculo.includes('lazer')) {
+      const totalSup = calculos.totalSuperfluos;
+      const tetoSup = calculos.limiteSuperfluos;
+      return {
+        sucesso: true,
+        acaoExecutada: 'CONSULTA_CATEGORIA',
+        mensagemResposta: `🎉 **Estilo de Vida & Supérfluos:**\n• Total Gasto: **${formatarBRL(totalSup)}**\n• Limite Sugerido (30%): **${formatarBRL(tetoSup)}**\n• Saldo Disponível na Categoria: **${formatarBRL(Math.max(0, tetoSup - totalSup))}**`,
+      };
+    }
+
+    if (cmdMinusculo.includes('invest') || cmdMinusculo.includes('aporte') || cmdMinusculo.includes('reserva') || cmdMinusculo.includes('guardei')) {
+      const totalInv = calculos.totalInvestimentos;
+      const metaInv = calculos.metaInvestimentos;
+      return {
+        sucesso: true,
+        acaoExecutada: 'CONSULTA_CATEGORIA',
+        mensagemResposta: `📈 **Investimentos & Aportes:**\n• Total Aportado: **${formatarBRL(totalInv)}**\n• Objetivo (20%): **${formatarBRL(metaInv)}**\n• Atingimento da Meta: **${((totalInv / (metaInv || 1)) * 100).toFixed(0)}%**`,
+      };
+    }
+
+    // Busca itens por termo específico (ex: "mercado", "luz", "gasolina")
+    const itensFiltrados = estadoAtual.itens.filter((it) => {
+      const tit = it.titulo.toLowerCase();
+      const sub = it.tipoDetalhado.toLowerCase();
+      return tit.split(/\s+/).some((w) => w.length >= 3 && cmdMinusculo.includes(w)) ||
+             sub.split(/\s+/).some((w) => w.length >= 3 && cmdMinusculo.includes(w));
+    });
+
+    if (itensFiltrados.length > 0) {
+      const totalFiltro = itensFiltrados.reduce((acc, it) => acc + it.valor, 0);
+      const detalhes = itensFiltrados.map((it) => `• ${it.titulo}: ${formatarBRL(it.valor)}`).join('\n');
+      return {
+        sucesso: true,
+        acaoExecutada: 'CONSULTA_FILTRO',
+        mensagemResposta: `🛒 **Gastos Localizados (${formatarBRL(totalFiltro)} no total):**\n${detalhes}`,
+      };
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // CONSULTA 3: Saldo Livre / Visão Geral / Diagnóstico
+  // -----------------------------------------------------------------------
+  if (
+    cmdMinusculo.includes('saldo') ||
+    cmdMinusculo.includes('quanto sobrou') ||
+    cmdMinusculo.includes('quanto tenho') ||
+    cmdMinusculo.includes('resumo') ||
+    cmdMinusculo.includes('estou no vermelho') ||
+    cmdMinusculo.includes('como está meu orçamento') ||
+    cmdMinusculo.includes('como estao minhas contas')
+  ) {
+    const saldo = calculos.saldoLivre;
+    const situacao = saldo >= 0 ? '🟢 Positivo e equilibrado' : '🔴 Em déficit orçamentário';
     return {
       sucesso: true,
       acaoExecutada: 'CONSULTA_SALDO',
-      mensagemResposta: `Sua renda líquida é ${formatarBRL(estadoAtual.rendaFamiliar)}. O total em despesas e aportes é ${formatarBRL(totalGastos)}. Seu saldo livre no momento é ${formatarBRL(saldoLivre)}.`,
+      mensagemResposta: `📊 **Resumo Financeiro em Tempo Real:**\n• **Renda Familiar:** ${formatarBRL(estadoAtual.rendaFamiliar)}\n• **Total Comprometido:** ${formatarBRL(calculos.totalGastos)} (${calculos.taxaComprometimento.toFixed(1)}%)\n• **Saldo Livre:** ${formatarBRL(saldo)}\nDiagnóstico: **${situacao}**!`,
     };
   }
 
-  // Resposta padrão com orientações
+  // -----------------------------------------------------------------------
+  // CONSULTA 4: Contas Pendentes / A Pagar
+  // -----------------------------------------------------------------------
+  if (
+    (cmdMinusculo.includes('pendente') || cmdMinusculo.includes('a pagar') || cmdMinusculo.includes('falta pagar') || cmdMinusculo.includes('o que devo')) &&
+    !cmdMinusculo.includes('marcar') && !cmdMinusculo.includes('muda') && !cmdMinusculo.includes('desmarcar')
+  ) {
+    const pendentes = estadoAtual.itens.filter((it) => !it.pago);
+    if (pendentes.length === 0) {
+      return {
+        sucesso: true,
+        acaoExecutada: 'CONSULTA_PENDENTES',
+        mensagemResposta: '🎉 **Parabéns!** Todas as suas despesas do mês já estão quitadas e marcadas como pagas!',
+      };
+    }
+
+    const totalPendente = pendentes.reduce((acc, it) => acc + it.valor, 0);
+    const lista = pendentes.slice(0, 6).map((it) => `• **${it.titulo}**: ${formatarBRL(it.valor)} (${it.vencimento})`).join('\n');
+    return {
+      sucesso: true,
+      acaoExecutada: 'CONSULTA_PENDENTES',
+      mensagemResposta: `📋 **Contas Pendentes (${pendentes.length} no total • ${formatarBRL(totalPendente)}):**\n${lista}${pendentes.length > 6 ? `\n• ... e mais ${pendentes.length - 6} contas.` : ''}`,
+    };
+  }
+
+  // -----------------------------------------------------------------------
+  // INTENÇÃO B: Atualização de Renda Familiar / Salário
+  // Ex: "meu salário aumentou para 12k", "minha renda é 8500", "ganhei aumento agora é 10 mil"
+  // -----------------------------------------------------------------------
+  if (
+    cmdMinusculo.includes('renda') ||
+    cmdMinusculo.includes('salário') ||
+    cmdMinusculo.includes('salario') ||
+    cmdMinusculo.includes('faturamento') ||
+    cmdMinusculo.includes('ganho líquido') ||
+    cmdMinusculo.includes('ganho liquido') ||
+    (cmdMinusculo.includes('aumento') && (cmdMinusculo.includes('para') || cmdMinusculo.includes('pra') || cmdMinusculo.includes('de')))
+  ) {
+    const novoValorRenda = normalizarValorMonetario(cmdMinusculo);
+    if (novoValorRenda && novoValorRenda > 0) {
+      acoes.atualizarRenda(novoValorRenda);
+      return {
+        sucesso: true,
+        acaoExecutada: 'ATUALIZAR_RENDA',
+        mensagemResposta: `✅ **Renda Familiar Atualizada!**\nNovo montante: **${formatarBRL(novoValorRenda)}**.\nOs tetos 50-30-20 foram recalculados instantaneamente:\n• **Fixas (50%):** ${formatarBRL(novoValorRenda * 0.5)}\n• **Supérfluos (30%):** ${formatarBRL(novoValorRenda * 0.3)}\n• **Investimentos (20%):** ${formatarBRL(novoValorRenda * 0.2)}`,
+      };
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // INTENÇÃO C: Alterar Metas da Regra 50-30-20
+  // Ex: "muda a meta de aporte pra 25%", "reduzir supérfluos para 20%"
+  // -----------------------------------------------------------------------
+  if (
+    cmdMinusculo.includes('meta') ||
+    cmdMinusculo.includes('regra') ||
+    cmdMinusculo.includes('porcentagem') ||
+    cmdMinusculo.includes('percentual')
+  ) {
+    const valorPercent = normalizarValorMonetario(cmdMinusculo);
+    if (valorPercent && valorPercent >= 1 && valorPercent <= 100) {
+      if (cmdMinusculo.includes('fixa') || cmdMinusculo.includes('essenci')) {
+        acoes.atualizarMetas({ fixas: valorPercent });
+        return {
+          sucesso: true,
+          acaoExecutada: 'ATUALIZAR_META',
+          mensagemResposta: `🎯 **Meta Atualizada:** O teto de **Contas Fixas** foi ajustado para **${valorPercent}%** da renda familiar.`,
+        };
+      }
+      if (cmdMinusculo.includes('supérfl') || cmdMinusculo.includes('superfl') || cmdMinusculo.includes('lazer')) {
+        acoes.atualizarMetas({ superfluos: valorPercent });
+        return {
+          sucesso: true,
+          acaoExecutada: 'ATUALIZAR_META',
+          mensagemResposta: `🎯 **Meta Atualizada:** O limite de **Supérfluos** foi ajustado para **${valorPercent}%** da renda familiar.`,
+        };
+      }
+      if (cmdMinusculo.includes('invest') || cmdMinusculo.includes('aporte') || cmdMinusculo.includes('reserva')) {
+        acoes.atualizarMetas({ investimentos: valorPercent });
+        return {
+          sucesso: true,
+          acaoExecutada: 'ATUALIZAR_META',
+          mensagemResposta: `🎯 **Meta Atualizada:** O objetivo de **Investimentos & Aportes** foi ajustado para **${valorPercent}%** da renda familiar.`,
+        };
+      }
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // INTENÇÃO D: Quitar Tudo / Quitação em Lote
+  // Ex: "quitei todas as contas", "paguei tudo", "marcar tudo como pago"
+  // -----------------------------------------------------------------------
+  if (
+    (cmdMinusculo.includes('quitei') || cmdMinusculo.includes('paguei') || cmdMinusculo.includes('marcar')) &&
+    (cmdMinusculo.includes('tudo') || cmdMinusculo.includes('todas as contas') || cmdMinusculo.includes('todos os boletos'))
+  ) {
+    const pendentes = estadoAtual.itens.filter((it) => !it.pago);
+    if (pendentes.length === 0) {
+      return {
+        sucesso: true,
+        acaoExecutada: 'STATUS_PAGAMENTO_LOTE',
+        mensagemResposta: '✨ Todas as suas despesas já estavam pagas e quitadas!',
+      };
+    }
+
+    const totalQuitado = pendentes.reduce((acc, it) => acc + it.valor, 0);
+    pendentes.forEach((it) => acoes.atualizarItem(it.id, { pago: true }));
+
+    return {
+      sucesso: true,
+      acaoExecutada: 'STATUS_PAGAMENTO_LOTE',
+      itensModificados: pendentes.length,
+      mensagemResposta: `🎉 **Quitação Total Concluída!**\nForam marcadas como pagas todas as **${pendentes.length}** contas pendentes (Total quitado: **${formatarBRL(totalQuitado)}**).`,
+    };
+  }
+
+  // -----------------------------------------------------------------------
+  // INTENÇÃO E: Marcar como Pago ou Pendente (Item Individual ou Múltiplos)
+  // Ex: "paguei a conta de luz", "quitei o condomínio", "desmarcar aluguel"
+  // -----------------------------------------------------------------------
+  if (
+    cmdMinusculo.includes('paguei') ||
+    cmdMinusculo.includes('quitei') ||
+    cmdMinusculo.includes('liquid') ||
+    cmdMinusculo.includes('tá pago') ||
+    cmdMinusculo.includes('ta pago') ||
+    cmdMinusculo.includes('marcar como pago') ||
+    cmdMinusculo.includes('desmarcar') ||
+    cmdMinusculo.includes('pendente') ||
+    cmdMinusculo.includes('não pago')
+  ) {
+    const tornarPendente = cmdMinusculo.includes('desmarcar') || cmdMinusculo.includes('pendente') || cmdMinusculo.includes('não pago');
+
+    // Identifica itens do ledger citados na mensagem
+    const itensAfetados = estadoAtual.itens.filter((it) => {
+      const tit = it.titulo.toLowerCase();
+      const palavras = tit.split(/\s+/).filter((w) => w.length >= 3);
+      return cmdMinusculo.includes(tit) || palavras.some((w) => cmdMinusculo.includes(w));
+    });
+
+    if (itensAfetados.length > 0) {
+      itensAfetados.forEach((it) => acoes.atualizarItem(it.id, { pago: !tornarPendente }));
+      const nomes = itensAfetados.map((it) => `**"${it.titulo}"** (${formatarBRL(it.valor)})`).join(', ');
+      return {
+        sucesso: true,
+        acaoExecutada: 'STATUS_PAGAMENTO',
+        itensModificados: itensAfetados.length,
+        mensagemResposta: `✔️ ${itensAfetados.length > 1 ? 'Os lançamentos' : 'O lançamento'} ${nomes} ${itensAfetados.length > 1 ? 'foram marcados' : 'foi marcado'} como **${tornarPendente ? 'Pendente' : 'Pago e Quitado'}**!`,
+      };
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // INTENÇÃO F: Excluir / Remover Lançamento
+  // Ex: "excluir a conta de luz", "apagar o almoço", "remover despesa de farmácia", "deletar uber"
+  // -----------------------------------------------------------------------
+  if (
+    cmdMinusculo.includes('excluir') ||
+    cmdMinusculo.includes('apagar') ||
+    cmdMinusculo.includes('remover') ||
+    cmdMinusculo.includes('deletar') ||
+    cmdMinusculo.includes('tirar') ||
+    cmdMinusculo.includes('cancela')
+  ) {
+    const itensAfetados = estadoAtual.itens.filter((it) => {
+      const tit = it.titulo.toLowerCase();
+      const palavras = tit.split(/\s+/).filter((w) => w.length >= 3);
+      return cmdMinusculo.includes(tit) || palavras.some((w) => cmdMinusculo.includes(w));
+    });
+
+    if (itensAfetados.length > 0) {
+      itensAfetados.forEach((it) => acoes.removerItem(it.id));
+      const nomes = itensAfetados.map((it) => `**"${it.titulo}"** (${formatarBRL(it.valor)})`).join(', ');
+      return {
+        sucesso: true,
+        acaoExecutada: 'REMOVER_ITEM',
+        itensModificados: itensAfetados.length,
+        mensagemResposta: `🗑️ ${itensAfetados.length > 1 ? 'Os lançamentos' : 'O lançamento'} ${nomes} ${itensAfetados.length > 1 ? 'foram removidos' : 'foi removido'} do seu orçamento.`,
+      };
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // INTENÇÃO G: Alterar Valor de Item Existente
+  // Ex: "mudar o aluguel para 2800", "alterar internet para 140", "ajustar luz para 320"
+  // -----------------------------------------------------------------------
+  if (
+    cmdMinusculo.includes('mudar') ||
+    cmdMinusculo.includes('alterar') ||
+    cmdMinusculo.includes('ajustar') ||
+    cmdMinusculo.includes('corrigir') ||
+    cmdMinusculo.includes('trocar valor')
+  ) {
+    const novoValor = normalizarValorMonetario(cmdMinusculo);
+    if (novoValor && novoValor > 0) {
+      const itemAlvo = estadoAtual.itens.find((it) => {
+        const tit = it.titulo.toLowerCase();
+        const palavras = tit.split(/\s+/).filter((w) => w.length >= 3);
+        return cmdMinusculo.includes(tit) || palavras.some((w) => cmdMinusculo.includes(w));
+      });
+
+      if (itemAlvo) {
+        acoes.atualizarItem(itemAlvo.id, { valor: novoValor });
+        return {
+          sucesso: true,
+          acaoExecutada: 'EDITAR_VALOR',
+          mensagemResposta: `✏️ O valor de **"${itemAlvo.titulo}"** foi alterado com sucesso de ${formatarBRL(itemAlvo.valor)} para **${formatarBRL(novoValor)}**!`,
+        };
+      }
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // INTENÇÃO H: Adição Múltipla / Lote ou Adição Única de Despesas e Aportes
+  // Divide frases compostas por quebras de linha, vírgulas, ponto e vírgula ou conectivo "e"
+  // Ex: "Almoço 45, farmácia 30 e luz 200"
+  // -----------------------------------------------------------------------
+  const partes = cmd
+    .split(/\r?\n|;|(?:,\s*(?=[a-zá-ú\s]+\d|\d))|(?:(?<=\d)\s+e\s+(?=[a-zá-ú]))|(?:e\s+(?=[a-zá-ú\s]+\d|\d))/i)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+
+  const itensAdicionados: Array<{ titulo: string; valor: number; categoria: string; pilar: string }> = [];
+
+  for (const parte of partes) {
+    const valor = normalizarValorMonetario(parte);
+    if (valor && valor > 0) {
+      const { categoria, subcategoria } = identificarCategoriaESubcategoria(parte);
+      const titulo = extrairTituloLimpo(parte, subcategoria);
+
+      acoes.adicionarItem({
+        titulo,
+        valor,
+        categoria,
+        tipoDetalhado: subcategoria,
+        vencimento: 'Dia 10',
+        pago:
+          parte.toLowerCase().includes('paguei') ||
+          parte.toLowerCase().includes('quitei') ||
+          parte.toLowerCase().includes('débito') ||
+          parte.toLowerCase().includes('debito'),
+      });
+
+      itensAdicionados.push({
+        titulo,
+        valor,
+        categoria: subcategoria,
+        pilar: CATEGORIAS_CONFIG[categoria].nome,
+      });
+    }
+  }
+
+  if (itensAdicionados.length > 0) {
+    const totalAdicionado = itensAdicionados.reduce((acc, it) => acc + it.valor, 0);
+
+    if (itensAdicionados.length === 1) {
+      const item = itensAdicionados[0];
+      return {
+        sucesso: true,
+        acaoExecutada: 'ADICIONAR_ITEM',
+        itensModificados: 1,
+        mensagemResposta: `✅ **Lançamento Registrado com Sucesso!**\n• **${item.titulo}**: ${formatarBRL(item.valor)}\n• **Classificação:** ${item.pilar} (${item.categoria})\nOs limites e gráficos 50-30-20 foram atualizados em tempo real!`,
+      };
+    }
+
+    const linhas = itensAdicionados
+      .map((it) => `• **${it.titulo}**: ${formatarBRL(it.valor)} → *${it.pilar} (${it.categoria})*`)
+      .join('\n');
+
+    return {
+      sucesso: true,
+      acaoExecutada: 'ADICIONAR_LOTE',
+      itensModificados: itensAdicionados.length,
+      mensagemResposta: `✅ **${itensAdicionados.length} Lançamentos Adicionados!** (Total: ${formatarBRL(totalAdicionado)})\n${linhas}\nTodos os pilares e o saldo livre foram recalculados!`,
+    };
+  }
+
+  // -----------------------------------------------------------------------
+  // RESPOSTA DE AJUDA INTELIGENTE SE NÃO RECONHECER VALOR ESPECÍFICO
+  // -----------------------------------------------------------------------
   return {
     sucesso: false,
-    mensagemResposta: `Não compreendi exatamente o comando. Você pode dizer ou digitar:
-• "Gastei 85 reais no restaurante"
-• "Mudar aluguel para 3400"
-• "Minha renda é 14000"
-• "Pagar energia elétrica"
-• "Qual é o meu saldo livre?"`,
+    mensagemResposta: `💡 Li sua mensagem: *" ${cmd} "*, mas não encontrei um valor ou comando financeiro direto.
+
+Experimente falar ou digitar assim:
+• **Gastos:** *"Gastei 85 no almoço"*, *"50 conto de gasolina"*, *"Pizza 80"*
+• **Múltiplos:** *"Mercado 400, luz 220 e farmácia 90"*
+• **Investimentos:** *"Aportei 1.500 no CDB"*, *"Guardei 500 no Tesouro"*
+• **Renda / Salário:** *"Minha renda subiu para 10k"*, *"Salário de 8.500"*
+• **Pagamentos:** *"Paguei a conta de luz"*, *"Quitei todas as contas"*
+• **Consultas:** *"Qual é o meu saldo livre?"*, *"Onde gastei mais?"*`,
   };
 }

@@ -38,10 +38,15 @@ pie title Distribuição Orçamentária Familiar
 
 ---
 
-## 4. Filosofia de Design e UX
-- **Obsidian Dark Fintech:** Paleta cromática profunda (`#07080b`), acentos em verde neon/esmeralda (`#00FF87`), azul ciano e roxo sutil para indicar classes orçamentárias.
+## 4. Filosofia de Design e UX: Factory System
+- **Terminal War Room at Midnight (Factory Design System):**
+  - **Canvas Base:** Preto profundo Obsidian (`#101010`), sem elevação por sombras difusas ou brilho neon; profundidade visual conquistada por contraste de figura e fundo.
+  - **A Jogada de Assinatura (Flashlit Dispatch):** O card de Saldo Livre (`#eeeeee`) flutua com tipografia escura (`#101010`) como um despacho iluminado por lanterna em sala de comando noturna.
+  - **Tipografia Geist & Geist Mono:** Todo o texto em Geist 400 com tracking negativo proporcional (`-0.04em` a `-0.02em`); rótulos de instrumentos e cabeçalhos em Geist Mono 12px uppercase.
+  - **Acentos Funcionais Estritos:** Apenas dois acentos cromáticos funcionais reservados exclusivamente para dados e pulsos de status: Signal Orange (`#ee6018`) e Metric Green (`#a0ca92`).
+  - **Geometria Precisa:** Bordas hairline de 1px em Ash Stroke (`#3d3a39`), botões e navegação em raio plano de 3px, painéis em 10px e ausência de drop-shadows.
 - **Edição em Linha (Click-to-Edit):** Qualquer valor monetário, categoria ou status pode ser editado diretamente na interface, dispensando formulários modais excessivos.
-- **Gráficos Vivos a 60 FPS:** Renderização contínua orientada a equações senoidais e harmônicas em SVG sem bibliotecas pesadas de animação externa.
+- **Gráficos Vivos a 60 FPS:** Renderização contínua orientada a equações senoidais e harmônicas em SVG sem bibliotecas pesadas de animação externa, estilizados em traços vetoriais matemáticos nítidos sem desfoque.
 - **Offline Total e Autonomia:** O usuário pode gerenciar receitas, contas e despesas no metrô, avião ou locais sem sinal. As informações persistem de modo atômico e sincronizam em segundo plano ao reconectar.
 
 ---

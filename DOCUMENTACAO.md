@@ -10,7 +10,8 @@
 | Camada | Tecnologia | Justificativa Técnica |
 | :--- | :--- | :--- |
 | **Framework UI** | React 19 | Concorrência, Server/Client components, re-renders otimizados e hooks modernos. |
-| **Estilização** | Tailwind CSS | Sistema de design atômico, paleta customizada Obsidian Dark Fintech e performance zero-runtime CSS. |
+| **Design System** | Factory Style Reference | Terminal war room at midnight, canvas Obsidian `#101010`, dispatch card `#eeeeee`, Geist 400 e Geist Mono, zero sombras e bordas hairline de 1px. |
+| **Estilização** | Tailwind CSS v4 | Sistema de design atômico com tokens nativos `@theme` e performance zero-runtime CSS. |
 | **Ícones** | Lucide React | Conjunto iconográfico limpo, vetorial e de baixo peso em bundle. |
 | **Persistência Primária** | LocalStorage API | Persistência atômica síncrona local para acesso imediato a dados sem latência. |
 | **Fila de Mutação Offline** | IndexedDB API | Fila serializada de transações geradas quando o usuário estiver sem conexão à internet. |
@@ -22,10 +23,10 @@
 
 ```mermaid
 graph TD
-    UI[App Shell / Interface Obsidian Dark] --> MR[Motor de Renda]
+    UI[App Shell / Interface Factory Terminal #101010] --> MR[Motor de Renda / Flashlit Dispatch]
     UI --> PL[Pilares do Lar 50-30-20]
-    UI --> GV[Gráficos Vetoriais SVG 60 FPS]
-    UI --> LD[Ledger de Despesas]
+    UI --> GV[War Room Vetorial 60 FPS]
+    UI --> LD[Ledger de Transações]
     
     MR --> LocalState[(Estado Local Reativo)]
     PL --> LocalState

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { CalculoOrcamentario, CategoriaOrcamentaria } from '../types/finance';
 import { formatarBRL, parseMoedaBR } from '../utils/calculations';
-import { Sparkles, Wallet, PieChart, Edit2, Check, X } from 'lucide-react';
+import { Wallet, PieChart, Edit2, Check, X } from 'lucide-react';
 
 interface Props {
   calculos: CalculoOrcamentario;
@@ -33,8 +33,7 @@ export const HyperRadarCard = ({
   useEffect(() => {
     let current = 0;
     const loop = () => {
-      // Velocidade do loop de respiração orgânica
-      current += 0.028;
+      current += 0.025;
       setTick(current);
       animRef.current = requestAnimationFrame(loop);
     };
@@ -48,13 +47,11 @@ export const HyperRadarCard = ({
   const cy = 175;
   const numVertices = 72;
 
-  // Geração de onda orgânica senoidal polar fechada (72 vértices polares)
-  // r(theta) = r_base + sin(theta * freq + offset) * amplitude
+  // Polar closed wave: r(theta) = r_base + sin(theta * freq + offset) * amp
   const generatePolarWave = (rBase: number, freq: number, offset: number, amplitude: number) => {
     const points: string[] = [];
     for (let i = 0; i <= numVertices; i++) {
       const theta = (i * 2 * Math.PI) / numVertices;
-      // Modulação senoidal contínua com respiração harmônica
       const r = rBase + Math.sin(theta * freq + offset + tick) * amplitude;
       const x = cx + r * Math.cos(theta);
       const y = cy + r * Math.sin(theta);
@@ -64,73 +61,71 @@ export const HyperRadarCard = ({
     return points.join(' ');
   };
 
-  // Onda Externa: Verde Esmeralda Neon (#00FF87)
-  const pathOuterEmerald = generatePolarWave(78, 6, 0, isHovered ? 14 : 10);
-  // Onda Interna: Roxo / Violeta Neon (#9D00FF)
-  const pathInnerPurple = generatePolarWave(58, 6, Math.PI / 3, isHovered ? 12 : 8);
+  const pathOuterGreen = generatePolarWave(76, 6, 0, isHovered ? 12 : 8);
+  const pathInnerOrange = generatePolarWave(56, 6, Math.PI / 3, isHovered ? 10 : 7);
 
-  // Ângulos e marcadores da grade polar exatamente como na imagem de referência
   const gridMarkers = [
-    { label: '8', angleDeg: -90 },
-    { label: '19', angleDeg: -45 },
-    { label: '15', angleDeg: 0 },
-    { label: '28', angleDeg: 45 },
-    { label: '25', angleDeg: 90 },
-    { label: '38', angleDeg: 135 },
-    { label: '35', angleDeg: 180 },
-    { label: '48', angleDeg: 225 },
+    { label: '01', angleDeg: -90 },
+    { label: '02', angleDeg: -45 },
+    { label: '03', angleDeg: 0 },
+    { label: '04', angleDeg: 45 },
+    { label: '05', angleDeg: 90 },
+    { label: '06', angleDeg: 135 },
+    { label: '07', angleDeg: 180 },
+    { label: '08', angleDeg: 225 },
   ];
 
   return (
     <div 
-      className="hyper-card p-6 lg:p-7 flex flex-col justify-between relative overflow-hidden"
+      className="bg-[#101010] border border-[#3d3a39] rounded-[10px] overflow-hidden flex flex-col justify-between"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Top Header com Título e Sparkle Pill */}
-      <div className="flex items-center justify-between pb-4 border-b border-[#161924]">
-        <div>
-          <h2 className="text-lg lg:text-xl font-bold text-white tracking-tight flex items-center gap-2">
-            Equilíbrio Harmônico 50-30-20
-          </h2>
-          <p className="text-xs text-[#9CA3AF]">
-            Radar orgânico senoidal de respiração orçamentária contínua
-          </p>
-        </div>
-
+      {/* macOS Terminal Window Header */}
+      <div className="h-9 bg-[#161413] border-b border-[#3d3a39] px-4 flex items-center justify-between select-none">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-[#00FF87]/15 border border-[#00FF87]/40 flex items-center justify-center">
-            <Sparkles className="w-3.5 h-3.5 text-[#00FF87] animate-star-pulse" />
-          </div>
+          <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+          <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+          <span className="ml-2 font-mono text-[11px] uppercase tracking-[-0.24px] text-[#eeeeee]">
+            RADAR_EQUILIBRIUM // HARMONIA SENOIDAL 50-30-20
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#a0ca92]" />
+          <span className="font-mono text-[10px] text-[#8a8380]">POLAR_FEED</span>
         </div>
       </div>
 
-      {/* Top Row: Weekly, Monthly, Annual KPIs exatamente como na imagem */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 pb-2">
-        <div>
-          <div className="flex items-center gap-2 text-xs text-[#9CA3AF] mb-1">
-            <span className="w-2.5 h-2.5 rounded-full border-2 border-[#00FF87]" />
-            <span className="font-semibold text-white">Semanal</span>
-          </div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-extrabold tracking-tight font-mono-numeric text-white">
-              {formatarBRL(calculos.saldoLivre / 4.3)}
+      {/* Top Metric Row: 3 Columns with 1px #1d1a18 dividers */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-[#1d1a18]">
+        {/* Metric 1: Semanal */}
+        <div className="p-5 border-b sm:border-b-0 sm:border-r border-[#1d1a18]">
+          <div className="flex items-center justify-between text-xs mb-1">
+            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0]">
+              Saldo Semanal
             </span>
-            <span className="text-xs font-mono text-[#00FF87]">↑ +19.6%</span>
+            <span className="font-mono text-[11px] text-[#a0ca92]">↑ 19.6%</span>
           </div>
-          <span className="text-[10px] text-[#4B5563] font-mono">
+          <div className="text-[28px] font-normal tracking-[-1.12px] leading-tight font-geist text-[#eeeeee]">
+            {formatarBRL(calculos.saldoLivre / 4.3)}
+          </div>
+          <span className="text-[11px] text-[#8a8380] font-mono">
             vs semana anterior
           </span>
         </div>
 
-        <div>
-          <div className="flex items-center gap-2 text-xs text-[#9CA3AF] mb-1">
-            <span className="text-[#00FF87] font-bold text-sm leading-none">+</span>
-            <span className="font-semibold text-white">Mensal</span>
+        {/* Metric 2: Mensal Consolidado */}
+        <div className="p-5 border-b sm:border-b-0 sm:border-r border-[#1d1a18]">
+          <div className="flex items-center justify-between text-xs mb-1">
+            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0]">
+              Despesas Mensais
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ee6018]" />
           </div>
           {editandoMensal ? (
             <div className="flex items-center gap-1 my-1">
-              <span className="text-xs font-mono text-[#9CA3AF]">R$</span>
+              <span className="text-xs font-mono text-[#8a8380]">R$</span>
               <input
                 type="text"
                 value={tempMensalValor}
@@ -144,7 +139,7 @@ export const HyperRadarCard = ({
                   if (e.key === 'Escape') setEditandoMensal(false);
                 }}
                 autoFocus
-                className="w-24 bg-[#07080b] border border-[#00FF87] rounded px-1.5 py-0.5 text-xs font-mono text-white focus:outline-none"
+                className="w-24 bg-[#1d1a18] border border-[#eeeeee] rounded-[3px] p-1 text-sm font-mono text-[#eeeeee] focus:outline-none"
               />
               <button
                 onClick={() => {
@@ -152,11 +147,11 @@ export const HyperRadarCard = ({
                   if (num >= 0 && onAjustarTotalGeral) onAjustarTotalGeral(num);
                   setEditandoMensal(false);
                 }}
-                className="text-[#00FF87] p-0.5"
+                className="p-1 rounded-[3px] bg-[#fafafa] text-[#101010]"
               >
                 <Check className="w-3 h-3" />
               </button>
-              <button onClick={() => setEditandoMensal(false)} className="text-[#9CA3AF] p-0.5">
+              <button onClick={() => setEditandoMensal(false)} className="p-1 rounded-[3px] bg-[#1d1a18] text-[#8a8380]">
                 <X className="w-3 h-3" />
               </button>
             </div>
@@ -166,24 +161,27 @@ export const HyperRadarCard = ({
                 setTempMensalValor(calculos.totalGastos.toString());
                 setEditandoMensal(true);
               }}
-              className="flex items-baseline gap-2 cursor-pointer group/mensal"
-              title="Clique para editar despesas mensais totais"
+              className="cursor-pointer group"
+              title="Clique para editar despesas mensais consolidadas"
             >
-              <span className="text-2xl font-extrabold tracking-tight font-mono-numeric text-white group-hover/mensal:text-[#00FF87] transition-colors border-b border-transparent group-hover/mensal:border-dashed group-hover/mensal:border-[#00FF87]">
-                {formatarBRL(calculos.totalGastos)}
+              <div className="text-[28px] font-normal tracking-[-1.12px] leading-tight font-geist text-[#eeeeee] group-hover:text-[#fafafa] flex items-baseline justify-between">
+                <span>{formatarBRL(calculos.totalGastos)}</span>
+                <Edit2 className="w-3 h-3 text-[#4d4947] group-hover:text-[#eeeeee]" />
+              </div>
+              <span className="text-[11px] text-[#8a8380] font-mono">
+                despesas consolidadas
               </span>
-              <Edit2 className="w-3 h-3 text-[#00FF87]/60 group-hover/mensal:text-[#00FF87] opacity-60 group-hover/mensal:opacity-100 transition-opacity" />
             </div>
           )}
-          <span className="text-[10px] text-[#4B5563] font-mono">
-            despesas consolidadas
-          </span>
         </div>
 
-        <div>
-          <div className="flex items-center gap-2 text-xs text-[#9CA3AF] mb-1">
-            <span className="text-[#FF6B00] font-bold text-sm leading-none">●</span>
-            <span className="font-semibold text-white">Anual</span>
+        {/* Metric 3: Capacidade Anual */}
+        <div className="p-5">
+          <div className="flex items-center justify-between text-xs mb-1">
+            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0]">
+              Capacidade Anual
+            </span>
+            <span className="w-1.5 h-1.5 rounded-full bg-[#a0ca92]" />
           </div>
           <div 
             onClick={() => {
@@ -192,49 +190,39 @@ export const HyperRadarCard = ({
                 setEditandoCentro(true);
               }
             }}
-            className="flex items-baseline gap-2 cursor-pointer group/anual"
-            title="Clique para editar capacidade anual (atualiza renda)"
+            className="cursor-pointer group"
+            title="Clique para editar renda"
           >
-            <span className="text-2xl font-extrabold tracking-tight font-mono-numeric text-white group-hover/anual:text-[#FF6B00] transition-colors border-b border-transparent group-hover/anual:border-dashed group-hover/anual:border-[#FF6B00]">
-              {formatarBRL(rendaFamiliar * 12)}
+            <div className="text-[28px] font-normal tracking-[-1.12px] leading-tight font-geist text-[#eeeeee] group-hover:text-[#fafafa] flex items-baseline justify-between">
+              <span>{formatarBRL(rendaFamiliar * 12)}</span>
+              <Edit2 className="w-3 h-3 text-[#4d4947] group-hover:text-[#eeeeee]" />
+            </div>
+            <span className="text-[11px] text-[#8a8380] font-mono">
+              renda líquida 12M
             </span>
-            <Edit2 className="w-3 h-3 text-[#FF6B00]/60 group-hover/anual:text-[#FF6B00] opacity-60 group-hover/anual:opacity-100 transition-opacity" />
           </div>
-          <span className="text-[10px] text-[#4B5563] font-mono">
-            capacidade total anual
-          </span>
         </div>
       </div>
 
-      {/* Central Interactive Harmonic Wave Polar Radar */}
-      <div className="relative w-full flex items-center justify-center my-4 select-none">
+      {/* Central Technical Polar Radar Graphic */}
+      <div className="relative w-full flex items-center justify-center p-6 select-none">
         <svg
           viewBox="0 0 350 350"
-          className="w-full max-w-[340px] aspect-square overflow-visible"
+          className="w-full max-w-[320px] aspect-square overflow-visible"
         >
-          <defs>
-            {/* Glowing Drop Shadow Filters */}
-            <filter id="emeraldGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#00FF87" floodOpacity="0.8" />
-            </filter>
-            <filter id="purpleGlow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="0" stdDeviation="6" floodColor="#9D00FF" floodOpacity="0.8" />
-            </filter>
-          </defs>
-
           {/* Concentric Polar Grid Rings */}
-          <circle cx={cx} cy={cy} r="130" fill="none" stroke="#161924" strokeWidth="1" strokeDasharray="3 3" />
-          <circle cx={cx} cy={cy} r="98" fill="none" stroke="#1c2233" strokeWidth="1" />
-          <circle cx={cx} cy={cy} r="65" fill="none" stroke="#161924" strokeWidth="1" strokeDasharray="2 2" />
-          <circle cx={cx} cy={cy} r="35" fill="none" stroke="#1c2233" strokeWidth="1" />
+          <circle cx={cx} cy={cy} r="128" fill="none" stroke="#1d1a18" strokeWidth="1" strokeDasharray="3 3" />
+          <circle cx={cx} cy={cy} r="96" fill="none" stroke="#3d3a39" strokeWidth="1" />
+          <circle cx={cx} cy={cy} r="64" fill="none" stroke="#1d1a18" strokeWidth="1" strokeDasharray="2 2" />
+          <circle cx={cx} cy={cy} r="32" fill="none" stroke="#3d3a39" strokeWidth="1" />
 
           {/* Polar Axis Lines */}
-          <line x1={cx} y1="30" x2={cx} y2="320" stroke="#161924" strokeWidth="1" strokeDasharray="2 2" />
-          <line x1="30" y1={cy} x2="320" y2={cy} stroke="#161924" strokeWidth="1" strokeDasharray="2 2" />
-          <line x1="72" y1="72" x2="278" y2="278" stroke="#161924" strokeWidth="1" strokeDasharray="2 2" />
-          <line x1="278" y1="72" x2="72" y2="278" stroke="#161924" strokeWidth="1" strokeDasharray="2 2" />
+          <line x1={cx} y1="30" x2={cx} y2="320" stroke="#1d1a18" strokeWidth="1" strokeDasharray="2 2" />
+          <line x1="30" y1={cy} x2="320" y2={cy} stroke="#1d1a18" strokeWidth="1" strokeDasharray="2 2" />
+          <line x1="72" y1="72" x2="278" y2="278" stroke="#1d1a18" strokeWidth="1" strokeDasharray="2 2" />
+          <line x1="278" y1="72" x2="72" y2="278" stroke="#1d1a18" strokeWidth="1" strokeDasharray="2 2" />
 
-          {/* Perimeter Degree Labels (8, 19, 15, 28, 25, 38, 35, 48) */}
+          {/* Axis Labels */}
           {gridMarkers.map((marker, idx) => {
             const rad = (marker.angleDeg * Math.PI) / 180;
             const labelR = 142;
@@ -246,39 +234,36 @@ export const HyperRadarCard = ({
                 x={lx}
                 y={ly}
                 textAnchor="middle"
-                fill="#4B5563"
+                fill="#8a8380"
                 fontSize="9"
                 fontFamily="monospace"
-                fontWeight="500"
               >
                 {marker.label}
               </text>
             );
           })}
 
-          {/* Inner Organic Sinusoidal Wave Loop (Neon Purple / Violet) */}
+          {/* Inner Organic Sinusoidal Loop: Signal Orange (#ee6018) */}
           <path
-            d={pathInnerPurple}
+            d={pathInnerOrange}
             fill="none"
-            stroke="#9D00FF"
-            strokeWidth="2.4"
-            filter="url(#purpleGlow)"
+            stroke="#ee6018"
+            strokeWidth="1.5"
             className="transition-all duration-100"
           />
 
-          {/* Outer Organic Sinusoidal Wave Loop (Neon Green / Emerald) */}
+          {/* Outer Organic Sinusoidal Loop: Metric Green (#a0ca92) */}
           <path
-            d={pathOuterEmerald}
+            d={pathOuterGreen}
             fill="none"
-            stroke="#00FF87"
-            strokeWidth="2.8"
-            filter="url(#emeraldGlow)"
+            stroke="#a0ca92"
+            strokeWidth="1.8"
             className="transition-all duration-100"
           />
 
-          {/* Central Dark Disc with Polygon / Diamond Emblem (Editável ao clicar) */}
+          {/* Central Technical Disc */}
           <g
-            className="cursor-pointer group/center"
+            className="cursor-pointer"
             onClick={() => {
               if (onAtualizarRenda) {
                 setValorTemp(rendaFamiliar.toString());
@@ -289,136 +274,105 @@ export const HyperRadarCard = ({
             <circle 
               cx={cx} 
               cy={cy} 
-              r="30" 
-              fill="#07080b" 
-              stroke="#222738" 
-              strokeWidth="2" 
-              className="group-hover/center:stroke-[#00FF87] transition-colors"
+              r="28" 
+              fill="#161413" 
+              stroke="#3d3a39" 
+              strokeWidth="1.5" 
             />
-            <circle cx={cx} cy={cy} r="25" fill="#0b0e14" />
+            <circle cx={cx} cy={cy} r="22" fill="#101010" />
 
-            {/* Central Geometric Icon */}
+            {/* Geometric Diamond Core */}
             <path
-              d={`M ${cx} ${cy - 14} L ${cx + 10} ${cy - 4} L ${cx} ${cy + 6} L ${cx - 10} ${cy - 4} Z`}
+              d={`M ${cx} ${cy - 12} L ${cx + 8} ${cy - 3} L ${cx} ${cy + 6} L ${cx - 8} ${cy - 3} Z`}
               fill="none"
-              stroke="#00FF87"
-              strokeWidth="1.8"
+              stroke="#eeeeee"
+              strokeWidth="1.2"
             />
-            <path
-              d={`M ${cx} ${cy - 14} L ${cx} ${cy + 6}`}
-              stroke="#00FF87"
-              strokeWidth="1"
-              strokeDasharray="2 2"
-            />
-            <circle cx={cx} cy={cy - 4} r="2.5" fill="#00D2FF" />
+            <circle cx={cx} cy={cy - 3} r="2" fill="#ee6018" />
           </g>
         </svg>
 
-        {/* Modal Inline Rápido de Edição de Renda */}
+        {/* Modal Inline Renda Center */}
         {editandoCentro && (
-          <div className="absolute inset-0 bg-black/85 backdrop-blur-sm flex flex-col items-center justify-center p-4 rounded-2xl z-20 animate-fadeIn">
-            <span className="text-xs font-bold text-[#00FF87] uppercase tracking-wider mb-2">
-              Editar Renda Familiar
-            </span>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-sm font-mono text-[#9CA3AF]">R$</span>
+          <div className="absolute inset-0 bg-[#101010]/95 flex flex-col items-center justify-center p-4 z-20 border border-[#3d3a39] rounded-[8px]">
+            <span className="font-mono text-xs text-[#eeeeee] mb-2">AJUSTAR RENDA FAMILIAR</span>
+            <div className="flex items-center gap-2">
               <input
                 type="text"
                 value={valorTemp}
                 onChange={(e) => setValorTemp(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    const num = parseMoedaBR(valorTemp);
-                    if (num >= 0 && onAtualizarRenda) onAtualizarRenda(num);
-                    setEditandoCentro(false);
-                  }
-                  if (e.key === 'Escape') setEditandoCentro(false);
-                }}
+                className="bg-[#1d1a18] border border-[#eeeeee] rounded-[3px] px-2 py-1 text-sm font-mono text-[#eeeeee] w-28 text-center"
                 autoFocus
-                className="w-36 bg-[#07080b] border border-[#00FF87] rounded-lg px-2.5 py-1 text-base font-mono font-bold text-white focus:outline-none"
               />
-            </div>
-            <div className="flex items-center gap-2">
               <button
-                type="button"
-                onClick={() => setEditandoCentro(false)}
-                className="px-3 py-1 rounded-lg text-xs text-[#9CA3AF] hover:text-white cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
                 onClick={() => {
                   const num = parseMoedaBR(valorTemp);
                   if (num >= 0 && onAtualizarRenda) onAtualizarRenda(num);
                   setEditandoCentro(false);
                 }}
-                className="px-3 py-1 rounded-lg bg-[#00FF87] text-[#07080b] font-bold text-xs hover:bg-[#00FF87]/90 transition cursor-pointer"
+                className="p-1 bg-[#fafafa] text-[#101010] rounded-[3px]"
               >
-                Salvar
+                <Check className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setEditandoCentro(false)}
+                className="p-1 bg-[#1d1a18] text-[#8a8380] rounded-[3px]"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
         )}
       </div>
 
-      {/* Bottom Area: Left Icon Badges + Right Category Breakdown (100% Editáveis) */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 pt-4 border-t border-[#161924] items-center">
-        {/* Left Badges (6 colunas) */}
+      {/* Bottom Breakdown: 3 Columns / Badges */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-5 border-t border-[#1d1a18] items-center">
+        {/* Left Badges (6 cols) */}
         <div className="md:col-span-6 flex flex-wrap items-center gap-3">
-          {/* Badge 1 (Purple Badge - Total Gasto) */}
-          <div 
+          <button 
+            type="button"
             onClick={() => onSelecionarFiltro?.('todos')}
-            className="flex items-center gap-3 p-2.5 px-3 rounded-xl bg-[#141724] border border-[#222738] hover:border-[#9D00FF]/50 transition-all cursor-pointer flex-1 sm:flex-initial"
-            title="Ver todas as despesas"
+            className="flex items-center gap-2.5 p-2 px-3 rounded-[3px] bg-[#161413] border border-[#3d3a39] hover:border-[#fafafa] text-left cursor-pointer"
           >
-            <div className="w-8 h-8 rounded-lg bg-[#9D00FF] flex items-center justify-center text-white shadow-md shadow-[#9D00FF]/30">
-              <PieChart className="w-4 h-4" />
-            </div>
+            <PieChart className="w-3.5 h-3.5 text-[#8a8380]" />
             <div>
-              <span className="text-[10px] text-[#9CA3AF] block leading-tight">Total Gasto</span>
-              <span className="text-xs font-bold font-mono text-white">
+              <span className="text-[10px] font-mono uppercase text-[#8a8380] block">Total Gasto</span>
+              <span className="text-xs font-mono text-[#eeeeee]">
                 {formatarBRL(calculos.totalGastos)}
               </span>
             </div>
-          </div>
+          </button>
 
-          {/* Badge 2 (Dark Badge - Saldo Livre Editável) */}
-          <div 
+          <button 
+            type="button"
             onClick={() => {
               if (onAtualizarRenda) {
                 setValorTemp(rendaFamiliar.toString());
                 setEditandoCentro(true);
               }
             }}
-            className="flex items-center gap-3 p-2.5 px-3 rounded-xl bg-[#0f1118] border border-[#1e2333] hover:border-[#00FF87]/50 transition-all cursor-pointer flex-1 sm:flex-initial"
-            title="Clique para editar renda familiar"
+            className="flex items-center gap-2.5 p-2 px-3 rounded-[3px] bg-[#161413] border border-[#3d3a39] hover:border-[#fafafa] text-left cursor-pointer"
           >
-            <div className="w-8 h-8 rounded-lg bg-[#181d29] border border-[#2d354d] flex items-center justify-center text-[#00FF87]">
-              <Wallet className="w-4 h-4" />
-            </div>
+            <Wallet className="w-3.5 h-3.5 text-[#a0ca92]" />
             <div>
-              <span className="text-[10px] text-[#9CA3AF] block leading-tight flex items-center gap-1">
-                Saldo Livre <span className="text-[#00FF87]">✎</span>
-              </span>
-              <span className="text-xs font-bold font-mono text-[#00FF87]">
+              <span className="text-[10px] font-mono uppercase text-[#8a8380] block">Saldo Livre</span>
+              <span className="text-xs font-mono text-[#a0ca92]">
                 {formatarBRL(calculos.saldoLivre)}
               </span>
             </div>
-          </div>
+          </button>
         </div>
 
-        {/* Right Stats Breakdown (6 colunas com clique para filtrar e editar) */}
-        <div className="md:col-span-6 flex flex-col justify-center sm:items-end gap-1.5 text-xs">
+        {/* Right Stats Breakdown (6 cols) */}
+        <div className="md:col-span-6 flex flex-col justify-center sm:items-end gap-1.5 text-xs font-mono">
           {/* Fixas */}
           <div className="flex items-center gap-2">
-            <button 
-              type="button"
+            <span 
               onClick={() => onSelecionarFiltro?.('fixas')}
-              className="text-[#9CA3AF] hover:text-[#00D2FF] transition cursor-pointer"
+              className="text-[#8a8380] hover:text-[#eeeeee] cursor-pointer"
             >
-              Contas Fixas (50%):
-            </button>
+              FIXAS (50%):
+            </span>
             {editandoCat === 'fixas' ? (
               <div className="flex items-center gap-1">
                 <input
@@ -434,7 +388,7 @@ export const HyperRadarCard = ({
                     if (e.key === 'Escape') setEditandoCat(null);
                   }}
                   autoFocus
-                  className="w-20 bg-[#07080b] border border-[#00D2FF] rounded px-1 text-xs font-mono text-white text-right focus:outline-none"
+                  className="w-20 bg-[#101010] border border-[#eeeeee] rounded-[3px] px-1 text-xs font-mono text-[#eeeeee] text-right focus:outline-none"
                 />
                 <button 
                   onClick={() => {
@@ -442,11 +396,11 @@ export const HyperRadarCard = ({
                     if (val >= 0 && onAjustarTotalPilar) onAjustarTotalPilar('fixas', val);
                     setEditandoCat(null);
                   }} 
-                  className="text-[#00FF87] cursor-pointer"
+                  className="text-[#a0ca92]"
                 >
                   <Check className="w-3 h-3" />
                 </button>
-                <button onClick={() => setEditandoCat(null)} className="text-[#9CA3AF] cursor-pointer">
+                <button onClick={() => setEditandoCat(null)} className="text-[#8a8380]">
                   <X className="w-3 h-3" />
                 </button>
               </div>
@@ -456,24 +410,23 @@ export const HyperRadarCard = ({
                   setTempCatValor(calculos.totalFixas.toString());
                   setEditandoCat('fixas');
                 }}
-                className="font-mono font-bold text-white hover:text-[#00D2FF] cursor-pointer flex items-center gap-1 border-b border-transparent hover:border-dashed hover:border-[#00D2FF]"
-                title="Clique para editar total de Contas Fixas"
+                className="text-[#eeeeee] hover:underline cursor-pointer flex items-center gap-1"
+                title="Editar total de Contas Fixas"
               >
                 {formatarBRL(calculos.totalFixas)}
-                <Edit2 className="w-2.5 h-2.5 text-[#00D2FF]/60" />
+                <Edit2 className="w-2.5 h-2.5 text-[#4d4947]" />
               </span>
             )}
           </div>
 
           {/* Supérfluos */}
           <div className="flex items-center gap-2">
-            <button 
-              type="button"
+            <span 
               onClick={() => onSelecionarFiltro?.('superfluos')}
-              className="text-[#9CA3AF] hover:text-[#9D00FF] transition cursor-pointer"
+              className="text-[#8a8380] hover:text-[#ee6018] cursor-pointer"
             >
-              Gastos Supérfluos (30%):
-            </button>
+              SUPÉRFLUOS (30%):
+            </span>
             {editandoCat === 'superfluos' ? (
               <div className="flex items-center gap-1">
                 <input
@@ -489,7 +442,7 @@ export const HyperRadarCard = ({
                     if (e.key === 'Escape') setEditandoCat(null);
                   }}
                   autoFocus
-                  className="w-20 bg-[#07080b] border border-[#9D00FF] rounded px-1 text-xs font-mono text-white text-right focus:outline-none"
+                  className="w-20 bg-[#101010] border border-[#ee6018] rounded-[3px] px-1 text-xs font-mono text-[#eeeeee] text-right focus:outline-none"
                 />
                 <button 
                   onClick={() => {
@@ -497,11 +450,11 @@ export const HyperRadarCard = ({
                     if (val >= 0 && onAjustarTotalPilar) onAjustarTotalPilar('superfluos', val);
                     setEditandoCat(null);
                   }} 
-                  className="text-[#00FF87] cursor-pointer"
+                  className="text-[#a0ca92]"
                 >
                   <Check className="w-3 h-3" />
                 </button>
-                <button onClick={() => setEditandoCat(null)} className="text-[#9CA3AF] cursor-pointer">
+                <button onClick={() => setEditandoCat(null)} className="text-[#8a8380]">
                   <X className="w-3 h-3" />
                 </button>
               </div>
@@ -511,24 +464,23 @@ export const HyperRadarCard = ({
                   setTempCatValor(calculos.totalSuperfluos.toString());
                   setEditandoCat('superfluos');
                 }}
-                className="font-mono font-bold text-white hover:text-[#9D00FF] cursor-pointer flex items-center gap-1 border-b border-transparent hover:border-dashed hover:border-[#9D00FF]"
-                title="Clique para editar total de Gastos Supérfluos"
+                className="text-[#ee6018] hover:underline cursor-pointer flex items-center gap-1"
+                title="Editar total de Supérfluos"
               >
                 {formatarBRL(calculos.totalSuperfluos)}
-                <Edit2 className="w-2.5 h-2.5 text-[#9D00FF]/60" />
+                <Edit2 className="w-2.5 h-2.5 text-[#4d4947]" />
               </span>
             )}
           </div>
 
           {/* Investimentos */}
           <div className="flex items-center gap-2">
-            <button 
-              type="button"
+            <span 
               onClick={() => onSelecionarFiltro?.('investimentos')}
-              className="text-[#9CA3AF] hover:text-[#00FF87] transition cursor-pointer"
+              className="text-[#8a8380] hover:text-[#a0ca92] cursor-pointer"
             >
-              Aportes & Reserva (20%):
-            </button>
+              INVESTIMENTOS (20%):
+            </span>
             {editandoCat === 'investimentos' ? (
               <div className="flex items-center gap-1">
                 <input
@@ -544,7 +496,7 @@ export const HyperRadarCard = ({
                     if (e.key === 'Escape') setEditandoCat(null);
                   }}
                   autoFocus
-                  className="w-20 bg-[#07080b] border border-[#00FF87] rounded px-1 text-xs font-mono text-white text-right focus:outline-none"
+                  className="w-20 bg-[#101010] border border-[#a0ca92] rounded-[3px] px-1 text-xs font-mono text-[#eeeeee] text-right focus:outline-none"
                 />
                 <button 
                   onClick={() => {
@@ -552,11 +504,11 @@ export const HyperRadarCard = ({
                     if (val >= 0 && onAjustarTotalPilar) onAjustarTotalPilar('investimentos', val);
                     setEditandoCat(null);
                   }} 
-                  className="text-[#00FF87] cursor-pointer"
+                  className="text-[#a0ca92]"
                 >
                   <Check className="w-3 h-3" />
                 </button>
-                <button onClick={() => setEditandoCat(null)} className="text-[#9CA3AF] cursor-pointer">
+                <button onClick={() => setEditandoCat(null)} className="text-[#8a8380]">
                   <X className="w-3 h-3" />
                 </button>
               </div>
@@ -566,11 +518,11 @@ export const HyperRadarCard = ({
                   setTempCatValor(calculos.totalInvestimentos.toString());
                   setEditandoCat('investimentos');
                 }}
-                className="font-mono font-bold text-[#00FF87] hover:underline cursor-pointer flex items-center gap-1 border-b border-transparent hover:border-dashed hover:border-[#00FF87]"
-                title="Clique para editar total de Aportes & Reserva"
+                className="text-[#a0ca92] hover:underline cursor-pointer flex items-center gap-1"
+                title="Editar total de Investimentos"
               >
                 {formatarBRL(calculos.totalInvestimentos)}
-                <Edit2 className="w-2.5 h-2.5 text-[#00FF87]/60" />
+                <Edit2 className="w-2.5 h-2.5 text-[#4d4947]" />
               </span>
             )}
           </div>
