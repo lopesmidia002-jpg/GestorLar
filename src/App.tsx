@@ -9,6 +9,7 @@ import { LedgerDespesas } from './components/LedgerDespesas';
 import { FinancialAssistantBot } from './components/FinancialAssistantBot';
 import { ModalNotificacoesFirebase } from './components/ModalNotificacoesFirebase';
 import { ModalConexaoNuvem } from './components/ModalConexaoNuvem';
+import { ModalZerarPainel } from './components/ModalZerarPainel';
 import { 
   executarVerificacaoGlobalENotificar, 
   escutarNotificacoesPrimeiroPlano 
@@ -34,11 +35,13 @@ export function App() {
     ajustarTetoPilar,
     ajustarTotalGeral,
     redefinirDadosPadrao,
+    zerarPainel,
   } = useFinanceStorage();
 
   const [filtroPilar, setFiltroPilar] = useState<CategoriaOrcamentaria | 'todos'>('todos');
   const [modalNotificacoesAberto, setModalNotificacoesAberto] = useState(false);
   const [modalNuvemAberto, setModalNuvemAberto] = useState(false);
+  const [modalZerarAberto, setModalZerarAberto] = useState(false);
 
   // Monitora contas vencendo, risco de saldo negativo e escuta mensagens push em primeiro plano
   useEffect(() => {
@@ -82,6 +85,7 @@ export function App() {
           onAtualizarRenda={atualizarRenda}
           onAjustarTotalGeral={ajustarTotalGeral}
           onRedefinir={redefinirDadosPadrao}
+          onAbrirZerarPainel={() => setModalZerarAberto(true)}
         />
 
         {/* 2. WAR ROOM: SUITE HYPER CHARTS 60 FPS */}
@@ -204,6 +208,7 @@ export function App() {
         onAlternarPago={alternarPago}
         onAtualizarRenda={atualizarRenda}
         onAtualizarMetas={atualizarMetas}
+        onZerarPainel={zerarPainel}
       />
 
       {/* 7. Modal de Notificações Push Firebase */}
@@ -222,6 +227,17 @@ export function App() {
         statusSync={statusSync}
         usuario={null}
         onForcarSincronizacao={forcarSincronizacao}
+      />
+
+      {/* 9. Modal de Limpeza Total / Zerar Todo o Painel */}
+      <ModalZerarPainel
+        aberto={modalZerarAberto}
+        onFechar={() => setModalZerarAberto(false)}
+        totalItens={estado.itens.length}
+        rendaAtual={estado.rendaFamiliar}
+        onZerarTudo={() => zerarPainel(false)}
+        onZerarApenasGastos={() => zerarPainel(true)}
+        onRestaurarDemo={redefinirDadosPadrao}
       />
     </div>
   );

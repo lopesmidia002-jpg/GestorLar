@@ -321,6 +321,20 @@ export function useFinanceStorage() {
     }
   };
 
+  const zerarPainel = (manterRenda: boolean = false) => {
+    setEstado((prev) => {
+      const estadoZerado: EstadoFinanceiro = {
+        rendaFamiliar: manterRenda ? prev.rendaFamiliar : 0,
+        metasRegra: { fixas: 50, superfluos: 30, investimentos: 20 },
+        itens: [],
+      };
+      if (isOnline && isSupabaseConfigured()) {
+        migrarDadosLocaisParaNuvem(estadoZerado);
+      }
+      return estadoZerado;
+    });
+  };
+
   const forcarSincronizacao = async () => {
     setStatusSync('sincronizando');
     await migrarDadosLocaisParaNuvem(estadoRef.current);
@@ -343,5 +357,6 @@ export function useFinanceStorage() {
     ajustarTetoPilar,
     ajustarTotalGeral,
     redefinirDadosPadrao,
+    zerarPainel,
   };
 }

@@ -20,6 +20,7 @@ export interface DomainHandlerContext {
   onAlternarPago?: (id: string) => void;
   onAtualizarRenda?: (novaRenda: number) => void;
   onAtualizarMetas?: (metas: any) => void;
+  onZerarPainel?: (manterRenda?: boolean) => void;
 }
 
 /**

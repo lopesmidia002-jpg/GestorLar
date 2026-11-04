@@ -75,3 +75,9 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
 - **Auto-Envio por Silêncio:** Conclusão automática e envio do comando após 1.8 segundos de pausa na fala, fornecendo confirmação auditiva (TTS) e feedback visual imediato no ledger.
 - **Sobrescrita Explícita de Pilares:** Detecção de alta prioridade quando o usuário dita o pilar pretendido (*"como supérfluo"*, *"no fixo"*, *"em investimentos"*), garantindo alocação no pilar correto independentemente do termo padrão do dicionário e higienizando o título resultante.
 
+---
+
+## 8. Funcionalidade de Zerar Painel
+- **Limpeza Total ou Parcial:** Botão no cabeçalho persistente permitindo zerar completamente o painel (renda R$ 0 e lançamentos apagados) ou purgar apenas os lançamentos mantendo a renda familiar atual.
+- **Prevenção contra Exclusão Acidental:** Modal de confirmação `ModalZerarPainel` no padrão estético Factory, com feedback atômico local e atualização na nuvem.
+

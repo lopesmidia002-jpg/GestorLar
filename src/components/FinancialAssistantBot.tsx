@@ -31,6 +31,7 @@ interface Props {
   onAlternarPago: (id: string) => void;
   onAtualizarRenda: (novaRenda: number) => void;
   onAtualizarMetas: (novasMetas: { fixas?: number; superfluos?: number; investimentos?: number }) => void;
+  onZerarPainel?: (manterRenda?: boolean) => void;
 }
 
 interface MensagemChat {
@@ -54,6 +55,7 @@ export const FinancialAssistantBot = ({
   onAlternarPago,
   onAtualizarRenda,
   onAtualizarMetas,
+  onZerarPainel,
 }: Props) => {
   const [aberto, setAberto] = useState(false);
   const [inputTexto, setInputTexto] = useState('');
@@ -314,6 +316,7 @@ export const FinancialAssistantBot = ({
         onAlternarPago,
         onAtualizarRenda,
         onAtualizarMetas,
+        onZerarPainel,
       });
 
       const novaMsgBot: MensagemChat = {
@@ -372,6 +375,7 @@ export const FinancialAssistantBot = ({
         onAlternarPago,
         onAtualizarRenda,
         onAtualizarMetas,
+        onZerarPainel,
       });
 
       // Atualiza a proposta na mensagem original para que os botões fiquem desabilitados

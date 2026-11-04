@@ -9,7 +9,8 @@ import {
   RotateCcw,
   RefreshCw,
   Bell,
-  Database
+  Database,
+  Trash2
 } from 'lucide-react';
 
 interface Props {
@@ -23,6 +24,7 @@ interface Props {
   onAtualizarRenda: (novaRenda: number) => void;
   onAjustarTotalGeral?: (novoTotal: number) => void;
   onRedefinir: () => void;
+  onAbrirZerarPainel?: () => void;
 }
 
 export const HeaderMotorRenda = ({
@@ -36,6 +38,7 @@ export const HeaderMotorRenda = ({
   onAtualizarRenda,
   onAjustarTotalGeral,
   onRedefinir,
+  onAbrirZerarPainel,
 }: Props) => {
   const [toastSync, setToastSync] = useState(false);
   const [editandoRenda, setEditandoRenda] = useState(false);
@@ -152,6 +155,19 @@ export const HeaderMotorRenda = ({
               title="Notificações push"
             >
               <Bell className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Botão para Zerar Todo o Painel */}
+          {onAbrirZerarPainel && (
+            <button
+              onClick={onAbrirZerarPainel}
+              className="h-[34px] px-3 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#ee6018] text-[#8a8380] hover:text-[#ee6018] font-mono text-xs uppercase tracking-tight flex items-center gap-1.5 cursor-pointer transition-colors"
+              title="Zerar todos os dados do painel"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-[#ee6018]" />
+              <span className="hidden sm:inline">Zerar Painel</span>
+              <span className="sm:hidden">Zerar</span>
             </button>
           )}
 

@@ -205,3 +205,14 @@ Quando o usuário menciona explicitamente o destino orçamentário no comando de
 1. **Prioridade de Sobrescrita:** A determinação explícita do pilar sobrepõe as associações padrão de vocabulário (por exemplo, um gasto em *"mercado"* direcionado *"como supérfluo"* é alocado em `superfluos` como *Compras Gerais*, e não em *Contas Fixas*).
 2. **Remoção de Falsos Positivos por Substring:** Eliminação de buscas parciais sem limite de palavra (como a palavra *"gasto"* casando indevidamente com o radical *"gas"* de Energia), garantindo casamento estrito por limites de palavra (`\b`).
 3. **Higienização de Título:** Nomes de pilares (*supérfluo*, *fixo*, *investimento*) e preposições conexas (*como*, *no*, *nas*) são expurgados do título do lançamento, resultando em descrições limpas e profissionais (ex: *"Mercado"*, *"Luz"*, *"CDB"*).
+
+---
+
+## 9. Mecanismo de Limpeza e Reinicialização Total do Painel (`zerarPainel`)
+
+### 9.1 Operações de Limpeza
+O sistema dispõe de rotina controlada para zerar o painel via interface ou comando de voz:
+1. **Zerar Tudo (Renda e Gastos):** Redefine a renda familiar líquida para R$ 0,00 e purga todos os lançamentos do ledger local (`itens: []`), recalculando instantaneamente todos os KPIs para zero e propagando para a nuvem.
+2. **Zerar Apenas Gastos:** Limpa todas as despesas e investimentos mantendo a renda líquida atual configurada.
+3. **Modal de Confirmação (`ModalZerarPainel`):** Interface modal estilizada no Factory Design System com confirmação explícita de duas etapas para prevenir limpezas acidentais.
+4. **Comando de Voz Integrado:** Capacidade do assistente IA interpretar frases como *"Zerar o painel"*, *"Limpar todo o painel"* ou *"Zerar tudo"*, executando a ação e fornecendo feedback falado e visual.

@@ -357,6 +357,7 @@ export async function processarTextoComando(
       alternarPago: ctx.onAlternarPago ? (id) => ctx.onAlternarPago!(id) : () => {},
       atualizarRenda: ctx.onAtualizarRenda ? (renda) => ctx.onAtualizarRenda!(renda) : () => {},
       atualizarMetas: ctx.onAtualizarMetas ? (metas) => ctx.onAtualizarMetas!(metas) : () => {},
+      zerarPainel: ctx.onZerarPainel ? (manterRenda) => ctx.onZerarPainel!(manterRenda) : () => {},
     });
 
     const interpretacaoZod = converterParserParaSchemaZod(resParser, textoSanitizado);

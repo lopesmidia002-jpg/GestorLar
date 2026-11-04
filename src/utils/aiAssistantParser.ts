@@ -22,6 +22,7 @@ export interface AssistantActions {
   alternarPago: (id: string) => void;
   atualizarRenda: (novaRenda: number) => void;
   atualizarMetas: (novasMetas: { fixas?: number; superfluos?: number; investimentos?: number }) => void;
+  zerarPainel?: (manterRenda?: boolean) => void;
 }
 
 // =========================================================================
@@ -722,6 +723,29 @@ Entendo qualquer comando em linguagem natural por texto ou voz! Exemplos que voc
           mensagemResposta: `🎯 **Meta Atualizada:** O objetivo de **Investimentos & Aportes** foi ajustado para **${valorPercent}%** da renda familiar.`,
         };
       }
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // INTENÇÃO: Zerar Todo o Painel
+  // Ex: "zerar o painel", "zerar painel", "limpar todo o painel", "apagar tudo", "zerar tudo"
+  // -----------------------------------------------------------------------
+  if (
+    cmdMinusculo.includes('zerar o painel') ||
+    cmdMinusculo.includes('zerar painel') ||
+    cmdMinusculo.includes('limpar o painel') ||
+    cmdMinusculo.includes('limpar todo o painel') ||
+    cmdMinusculo.includes('zerar tudo') ||
+    cmdMinusculo.includes('apagar todo o painel') ||
+    cmdMinusculo.includes('apagar todos os dados')
+  ) {
+    if (acoes.zerarPainel) {
+      acoes.zerarPainel(false);
+      return {
+        sucesso: true,
+        acaoExecutada: 'ZERAR_PAINEL',
+        mensagemResposta: '🧹 **Todo o painel foi zerado com sucesso!**\nA renda familiar foi redefinida para R$ 0,00 e todos os lançamentos do ledger foram removidos.',
+      };
     }
   }
 
