@@ -293,21 +293,108 @@ export function normalizarValorMonetario(texto: string): number | null {
 // 3. CLASSIFICAÇÃO SEMÂNTICA AUTOMÁTICA DE CATEGORIA E SUBCATEGORIA
 // =========================================================================
 
-export function identificarCategoriaESubcategoria(texto: string): {
+/**
+ * Detecta se o usuário especificou expressamente o pilar de alocação no comando.
+ * Ex: "como supérfluo", "gasto supérfluos", "no pilar fixas", "como investimento", etc.
+ */
+export function detectarPilarExplicito(texto: string): CategoriaOrcamentaria | null {
+  if (!texto) return null;
+  const t = texto.toLowerCase();
+
+  // 1. Supérfluos / Estilo de Vida / Variáveis / Discricionários
+  // Ex: "como supérfluo", "gasto supérfluos", "supérfluos mercado", "no supérfluo", "pilar supérfluos", "estilo de vida"
+  const regexSuperfluos = /\b(?:como|no|nos|em|pilar(?:\s+de)?|categoria|gasto|gastos|despesa|despesas)\s+(?:sup[eé]rfluos?|estilo\s+de\s+vida|vari[aá]ve(?:l|is)|discricion[aá]rios?|lazer)\b|\b(?:sup[eé]rfluos?|estilo\s+de\s+vida|discricion[aá]rios?)\b/i;
+  
+  // 2. Fixas / Essenciais / Básicas
+  // Ex: "como fixa", "como fixas", "no fixo", "gasto fixo", "despesa fixa", "contas fixas", "pilar fixo", "essencial"
+  const regexFixas = /\b(?:como|no|nos|na|nas|em|pilar(?:\s+de)?|categoria|gasto|gastos|despesa|despesas|conta|contas)\s+(?:fix[ao]s?|essencia(?:l|is)|b[aá]sic[ao]s?|obrigat[oó]ri[ao]s?)\b|\b(?:contas?\s+fix[ao]s?|despesas?\s+fix[ao]s?|gastos?\s+fix[ao]s?)\b/i;
+
+  // 3. Investimentos / Aportes / Reserva
+  // Ex: "como investimento", "nos investimentos", "como aporte", "pilar investimento", "na reserva"
+  const regexInvestimentos = /\b(?:como|no|nos|em|pilar(?:\s+de)?|categoria|para|pra)\s+(?:investimentos?|aportes?|reserva(?:\s+de\s+emerg[eê]ncia)?|poupan[cç]a)\b|\b(?:investimentos?|aportes?)\b/i;
+
+  if (regexSuperfluos.test(t)) {
+    return 'superfluos';
+  }
+  if (regexFixas.test(t)) {
+    return 'fixas';
+  }
+  if (regexInvestimentos.test(t)) {
+    return 'investimentos';
+  }
+
+  return null;
+}
+
+export function identificarCategoriaESubcategoria(
+  texto: string,
+  contextoGeral?: string
+): {
   categoria: CategoriaOrcamentaria;
   subcategoria: string;
 } {
   const t = texto.toLowerCase();
 
-  // Ordem de prioridade: 1. Investimentos, 2. Fixas, 3. Supérfluos
+  // 1. PRIORIDADE MÁXIMA: Checagem de Pilar Explícito citado pelo usuário no áudio/texto
+  const pilarExplicito = detectarPilarExplicito(t) || (contextoGeral ? detectarPilarExplicito(contextoGeral) : null);
+
+  if (pilarExplicito) {
+    const config = DICIONARIO_CATEGORIAS[pilarExplicito];
+
+    // Busca se há subcategoria específica compatível dentro do pilar solicitado
+    for (const [subNome, palavras] of Object.entries(config.subcategorias)) {
+      for (const p of palavras) {
+        const regex = new RegExp(`\\b${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
+        if (regex.test(t)) {
+          return { categoria: pilarExplicito, subcategoria: subNome };
+        }
+      }
+    }
+
+    // Mapeamentos semânticos inteligentes quando um item for forçado no pilar supérfluos
+    if (pilarExplicito === 'superfluos') {
+      if (/\b(?:mercado|supermercado|compras?|feira|a[çc]ougue|hortifruti)\b/i.test(t)) {
+        return { categoria: 'superfluos', subcategoria: 'Compras Gerais' };
+      }
+      if (/\b(?:farm[aá]cia|drogaria|rem[eé]dio|medicamento)\b/i.test(t)) {
+        return { categoria: 'superfluos', subcategoria: 'Cuidados Pessoais' };
+      }
+      if (/\b(?:uber|99|t[aá]xi|corrida|transporte)\b/i.test(t)) {
+        return { categoria: 'superfluos', subcategoria: 'Lazer & Viagens' };
+      }
+      return { categoria: 'superfluos', subcategoria: config.subcategoriaPadrao };
+    }
+
+    // Mapeamentos semânticos inteligentes quando um item for forçado no pilar fixas
+    if (pilarExplicito === 'fixas') {
+      if (/\b(?:uber|99|gasolina|combust[ií]vel|transporte|posto)\b/i.test(t)) {
+        return { categoria: 'fixas', subcategoria: 'Transporte Essencial' };
+      }
+      if (/\b(?:restaurante|almo[cç]o|jantar|lanche|marmita|refei[cç][aã]o)\b/i.test(t)) {
+        return { categoria: 'fixas', subcategoria: 'Alimentação Básica' };
+      }
+      return { categoria: 'fixas', subcategoria: config.subcategoriaPadrao };
+    }
+
+    // Mapeamentos inteligentes quando forçado no pilar investimentos
+    if (pilarExplicito === 'investimentos') {
+      if (/\b(?:reserva|emerg[eê]ncia)\b/i.test(t)) {
+        return { categoria: 'investimentos', subcategoria: 'Reserva de Emergência' };
+      }
+      return { categoria: 'investimentos', subcategoria: config.subcategoriaPadrao };
+    }
+  }
+
+  // 2. DETECÇÃO SEMÂNTICA PADRÃO (Ordem: 1. Investimentos, 2. Fixas, 3. Supérfluos)
   for (const cat of ['investimentos', 'fixas', 'superfluos'] as CategoriaOrcamentaria[]) {
     const catConfig = DICIONARIO_CATEGORIAS[cat];
 
-    // Checagem de subcategorias específicas com termos compostos ou palavras inteiras
+    // Checagem de subcategorias específicas com termos compostos ou palavras inteiras COM WORD BOUNDARY
+    // SEM t.includes(p) para evitar falsos positivos como "gas" dentro de "gasto"!
     for (const [subNome, palavras] of Object.entries(catConfig.subcategorias)) {
       for (const p of palavras) {
         const regex = new RegExp(`\\b${p.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'i');
-        if (regex.test(t) || t.includes(p)) {
+        if (regex.test(t)) {
           return { categoria: cat, subcategoria: subNome };
         }
       }
@@ -331,14 +418,24 @@ export function identificarCategoriaESubcategoria(texto: string): {
 // =========================================================================
 
 const STOPWORDS_LANCAMENTO = [
+  // Ações e verbos de inserção
   'adicionar', 'adiciona', 'adicione', 'adicionar aí', 'lançar', 'lancar', 'lanca', 'lance', 'novo', 'nova',
-  'despesa', 'gasto', 'gastei', 'comprei', 'paguei', 'quitei', 'coloque', 'coloca', 'colocar', 'bota', 'bote', 'botar', 'anota', 'anote', 'anotar',
-  'valor', 'no', 'na', 'nos', 'nas', 'de', 'do', 'da', 'dos', 'das', 'por', 'pra', 'para',
+  'despesa', 'despesas', 'gasto', 'gastos', 'gastei', 'comprei', 'paguei', 'quitei', 'coloque', 'coloca', 'colocar',
+  'bota', 'bote', 'botar', 'anota', 'anote', 'anotar', 'insere', 'insira', 'inserir', 'registra', 'registre', 'registrar',
+
+  // Conectivos e preposições
+  'como', 'no', 'na', 'nos', 'nas', 'de', 'do', 'da', 'dos', 'das', 'por', 'pra', 'para', 'pro', 'pros', 'pras',
   'em', 'um', 'uma', 'uns', 'umas', 'reais', 'real', 'conto', 'contos', 'pau', 'paus',
   'mango', 'mangos', 'pila', 'pilas', 'hoje', 'ontem', 'aqui', 'mais', 'favor', 'por favor',
   'r$', 'pix', 'cartão', 'cartao', 'debito', 'débito', 'credito', 'crédito', 'comprei um', 'comprei uma',
-  'paguei o', 'paguei a', 'ia', 'bot', 'assistente', 'anota aí', 'bota aí', 'registra', 'registre', 'registrar',
-  'insere', 'insira', 'inserir'
+  'paguei o', 'paguei a', 'ia', 'bot', 'assistente', 'anota aí', 'bota aí',
+
+  // Nomes de Pilares e Categorias (para que não contaminem o título do gasto)
+  'supérfluo', 'supérfluos', 'superfluo', 'superfluos', 'estilo de vida', 'variável', 'variáveis', 'variavel', 'variaveis',
+  'discricionário', 'discricionários', 'discricionario', 'discricionarios',
+  'fixo', 'fixa', 'fixos', 'fixas', 'essencial', 'essenciais', 'básico', 'básica', 'basico', 'basica',
+  'investimento', 'investimentos', 'aporte', 'aportes', 'reserva',
+  'pilar', 'pilares', 'categoria', 'categorias', 'classificação', 'classificacao', 'conta', 'contas'
 ];
 
 export function extrairTituloLimpo(texto: string, subcategoriaPadrao: string): string {
@@ -354,7 +451,7 @@ export function extrairTituloLimpo(texto: string, subcategoriaPadrao: string): s
     limpo = limpo.replace(regExt, ' ');
   }
 
-  // Remove stopwords conversacionais
+  // Remove stopwords conversacionais e nomes de pilares
   for (const sw of STOPWORDS_LANCAMENTO) {
     const reg = new RegExp(`\\b${sw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
     limpo = limpo.replace(reg, ' ');
@@ -371,7 +468,11 @@ export function extrairTituloLimpo(texto: string, subcategoriaPadrao: string): s
       .join(' ');
   }
 
-  return subcategoriaPadrao || 'Gasto Geral';
+  if (subcategoriaPadrao && subcategoriaPadrao !== 'Restaurantes' && subcategoriaPadrao !== 'Moradia') {
+    return subcategoriaPadrao;
+  }
+
+  return 'Despesa';
 }
 
 // =========================================================================
@@ -766,7 +867,7 @@ Entendo qualquer comando em linguagem natural por texto ou voz! Exemplos que voc
   for (const parte of partes) {
     const valor = normalizarValorMonetario(parte);
     if (valor && valor > 0) {
-      const { categoria, subcategoria } = identificarCategoriaESubcategoria(parte);
+      const { categoria, subcategoria } = identificarCategoriaESubcategoria(parte, cmd);
       const titulo = extrairTituloLimpo(parte, subcategoria);
 
       acoes.adicionarItem({

@@ -199,3 +199,9 @@ O assistente `FACTORY // COPILOT_TERMINAL.SYS` opera com reconhecimento de fala 
 2. **Modo Contínuo (`continuous = true`, `interimResults = true`):** A escuta permanece aberta durante micro-pausas do usuário enquanto fala números e comandos complexos (ex: *"Coloque 50 de almoço"*, *"Adiciona 100 de luz e 200 de mercado"*).
 3. **Detector de Silêncio Inteligente (Auto-Submit):** Um timer de inatividade de 1.8 segundos após a última palavra detectada conclui a gravação e dispara a interpretação e atualização contábil sem necessidade de cliques manuais.
 4. **Reconstrução Semântica e Limpeza de Stopwords:** O módulo `aiAssistantParser` sanitiza números por extenso e comandos coloquiais (*coloque*, *anota*, *lança*, *bota*, *de*, *no*, *reais*), extraindo o título categorizado e o valor numérico com precisão estrita.
+
+### 8.2 Resolução de Pilares com Prioridade Máxima (`detectarPilarExplicito`)
+Quando o usuário menciona explicitamente o destino orçamentário no comando de voz ou texto (ex: *"como supérfluo"*, *"gasto supérfluos"*, *"nas contas fixas"*, *"no pilar investimentos"*):
+1. **Prioridade de Sobrescrita:** A determinação explícita do pilar sobrepõe as associações padrão de vocabulário (por exemplo, um gasto em *"mercado"* direcionado *"como supérfluo"* é alocado em `superfluos` como *Compras Gerais*, e não em *Contas Fixas*).
+2. **Remoção de Falsos Positivos por Substring:** Eliminação de buscas parciais sem limite de palavra (como a palavra *"gasto"* casando indevidamente com o radical *"gas"* de Energia), garantindo casamento estrito por limites de palavra (`\b`).
+3. **Higienização de Título:** Nomes de pilares (*supérfluo*, *fixo*, *investimento*) e preposições conexas (*como*, *no*, *nas*) são expurgados do título do lançamento, resultando em descrições limpas e profissionais (ex: *"Mercado"*, *"Luz"*, *"CDB"*).

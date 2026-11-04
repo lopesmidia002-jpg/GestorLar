@@ -73,4 +73,5 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
 - **Operação de Voz Direta (Web Speech API):** O microfone transcreve e exibe a fala instantaneamente sem latência de upload de áudio, com modo contínuo resiliente a pausas naturais.
 - **Parser Semântico de Lançamentos:** Suporte a comandos coloquiais como *"Coloque 50 de almoço"*, *"Adiciona 100 de luz"*, *"Paguei a internet"*, com normalização de números por extenso, gírias monetárias (reais, conto, pila, k) e classificação automática no pilar 50-30-20.
 - **Auto-Envio por Silêncio:** Conclusão automática e envio do comando após 1.8 segundos de pausa na fala, fornecendo confirmação auditiva (TTS) e feedback visual imediato no ledger.
+- **Sobrescrita Explícita de Pilares:** Detecção de alta prioridade quando o usuário dita o pilar pretendido (*"como supérfluo"*, *"no fixo"*, *"em investimentos"*), garantindo alocação no pilar correto independentemente do termo padrão do dicionário e higienizando o título resultante.
 
