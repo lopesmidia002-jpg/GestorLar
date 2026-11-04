@@ -100,4 +100,6 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
   - Ícone de envio direto em cada linha do Ledger e em cada card de conta do Calendário Mensal.
   - Respostas no Assistente Copilot para consultas por voz e texto sobre contas a vencer.
 - **Persistência de Preferências:** Salva número de telefone e parâmetros de antecedência no `localStorage`.
+- **Múltiplos Números Cadastrados:** Gerenciamento de múltiplos contatos da família (Cônjuge, Titular, Familiar) com ativação independente para recebimento de alertas.
+- **Automação Diária Inteligente:** Rotina que monitora as datas de vencimento e efetua o disparo automático diário para todos os contatos ativos sem repetições no mesmo dia, com suporte opcional a Webhooks e gateways REST WhatsApp para envio 100% silencioso.
 

@@ -252,5 +252,19 @@ O subsistema `whatsappReminderService` monitora continuamente todas as despesas 
 3. **Disparo Direto para API do WhatsApp:**
    - Normaliza telefones brasileiros e internacionais (`55 + DDD + número`).
    - Aciona `https://api.whatsapp.com/send` ou `https://wa.me/` com texto pré-preenchido e codificado via `encodeURIComponent`, compatível com WhatsApp Web no Desktop e aplicativo móvel oficial (Android/iOS).
-4. **Banner de Alerta Ativo (`BannerLembreteWhatsApp`):** Notificação em tempo real no topo do painel quando houver contas a vencer, permitindo envio imediato no WhatsApp com 1 clique.
-5. **Central de Configuração (`ModalLembretesWhatsApp`):** Interface modal para ajuste de número do WhatsApp, dias de antecedência, ativação/desativação de contas atrasadas e pré-visualização em tempo real do texto da mensagem antes do envio.
+4. **Banner de Alerta Ativo (`BannerLembreteWhatsApp`):** Notificação em tempo real no topo do painel quando houver contas a vencer, permitindo envio imediato no WhatsApp com 1 clique para todos os contatos ativos.
+5. **Central de Configuração (`ModalLembretesWhatsApp`):** Interface modal com abas para gerenciamento de contas, cadastro de destinatários e configuração da automação diária.
+
+### 11.2 Cadastro de Múltiplos Números de WhatsApp (`DestinatarioWhatsApp[]`)
+O sistema suporta cadastro dinâmico de múltiplos números telefônicos para famílias ou casais que compartilham despesas:
+1. **Identificação e Vínculo:** Cada registro armazena nome identificador (ex: *Titular*, *Cônjuge*, *Familiar*), telefone com DDD e tipo de vínculo.
+2. **Controle Individual de Ativação:** Cada contato possui um seletor rápido para ativar ou desativar o recebimento dos alertas sem precisar deletar o número.
+3. **Disparo em Lote Sequenciado:** Dispara os lembretes formatados para todos os contatos ativos cadastrados, com temporização suave para evitar bloqueios de popup do navegador.
+
+### 11.3 Robô de Automação Diária e Webhook Gateway
+1. **Disparo Automático Diário (`executarDisparoAutomaticoSeNecessario`):**
+   - Ao iniciar a aplicação ou carregar os lançamentos, o sistema verifica se há contas a vencer no dia ou nos próximos dias.
+   - Valida se o disparo de hoje (`YYYY-MM-DD`) já foi realizado para evitar repetições indesejadas no mesmo dia.
+   - Realiza o envio automático para todos os números ativos cadastrados.
+2. **Integração com Webhooks e Gateways WhatsApp:**
+   - Suporte opcional a endpoint POST REST (ex: Z-API, Evolution API, Baileys ou Supabase Edge Functions) com autenticação Bearer Token, viabilizando disparos 100% silenciosos em background.

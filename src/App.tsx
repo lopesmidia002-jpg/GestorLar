@@ -15,7 +15,8 @@ import { BannerLembreteWhatsApp } from './components/BannerLembreteWhatsApp';
 import { ModalLembretesWhatsApp } from './components/ModalLembretesWhatsApp';
 import { 
   obterConfiguracaoWhatsApp, 
-  analisarContasParaLembrete 
+  analisarContasParaLembrete,
+  executarDisparoAutomaticoSeNecessario
 } from './services/whatsappReminderService';
 import { 
   executarVerificacaoGlobalENotificar, 
@@ -70,6 +71,17 @@ export function App() {
       if (cancelar) cancelar();
     };
   }, [estado, calculos]);
+
+  // Automação diária de alertas no WhatsApp para os números cadastrados
+  useEffect(() => {
+    if (estado.itens.length > 0) {
+      executarDisparoAutomaticoSeNecessario(estado.itens).then((res) => {
+        if (res.disparado) {
+          console.log(`[WhatsApp Auto-Dispatch] Alerta disparado para ${res.totalDestinatarios} número(s) cadastrado(s) com ${res.totalContas} conta(s).`);
+        }
+      });
+    }
+  }, [estado.itens]);
 
   // Exportar backup JSON
   const exportarJSON = () => {
