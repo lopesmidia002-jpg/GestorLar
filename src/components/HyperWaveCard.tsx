@@ -38,7 +38,7 @@ export const HyperWaveCard = ({
   }, []);
 
   const width = 340;
-  const height = 180;
+  const height = 150;
 
   // Wave generator
   const generateWave = (baseY: number, freq: number, phase: number, amp: number, invert = false) => {
@@ -54,15 +54,15 @@ export const HyperWaveCard = ({
     return points.join(' ');
   };
 
-  const pathOrange = generateWave(70, 0.22, 0, 22, false);
-  const pathGreen = generateWave(70, 0.22, 0.4, 22, true);
-  const pathBone = generateWave(130, 0.20, Math.PI / 4, 18, false);
-  const pathGranite = generateWave(130, 0.20, Math.PI / 4 + 0.5, 18, true);
+  const pathOrange = generateWave(55, 0.22, 0, 20, false);
+  const pathGreen = generateWave(55, 0.22, 0.4, 20, true);
+  const pathBone = generateWave(105, 0.20, Math.PI / 4, 16, false);
+  const pathGranite = generateWave(105, 0.20, Math.PI / 4 + 0.5, 16, true);
 
   return (
     <div className="bg-[#101010] border border-[#3d3a39] rounded-[10px] overflow-hidden flex flex-col justify-between h-full">
       {/* macOS Terminal Window Header */}
-      <div className="h-9 bg-[#161413] border-b border-[#3d3a39] px-4 flex items-center justify-between select-none">
+      <div className="h-9 shrink-0 bg-[#161413] border-b border-[#3d3a39] px-4 flex items-center justify-between select-none">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
           <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
@@ -71,8 +71,8 @@ export const HyperWaveCard = ({
             WAVE_OSCILLATOR // FLUXO CONTÍNUO
           </span>
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#a0ca92]" />
+        <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-[2px] bg-[#1d1a18] border border-[#3d3a39]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#a0ca92] animate-pulse" />
           <span className="font-mono text-[10px] text-[#8a8380]">60 FPS</span>
         </div>
       </div>
@@ -208,7 +208,7 @@ export const HyperWaveCard = ({
 
       {/* Interactive Sinusoidal Technical Graph */}
       <div 
-        className="relative w-full p-4 cursor-crosshair select-none"
+        className="relative flex-1 min-h-[140px] flex flex-col justify-center px-4 py-2 cursor-crosshair select-none overflow-hidden"
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           setHoverX(e.clientX - rect.left);
@@ -216,16 +216,16 @@ export const HyperWaveCard = ({
         onMouseLeave={() => setHoverX(null)}
       >
         <div className="absolute left-4 top-2 text-[10px] font-mono text-[#4d4947]">Y1: +120</div>
-        <div className="absolute left-4 bottom-2 text-[10px] font-mono text-[#4d4947]">Y0: -120</div>
         <div className="absolute right-4 top-2 text-[10px] font-mono text-[#4d4947]">SIG_OUT</div>
+        <div className="absolute left-4 bottom-2 text-[10px] font-mono text-[#4d4947]">Y0: -120</div>
 
         <svg 
           viewBox={`0 0 ${width} ${height}`} 
-          className="w-full h-auto overflow-visible py-2"
+          className="w-full h-auto max-h-[145px] overflow-visible py-1"
         >
           {/* Hairline Grid Dividers */}
-          <line x1="10" y1="70" x2={width - 10} y2="70" stroke="#1d1a18" strokeWidth="1" strokeDasharray="2 4" />
-          <line x1="10" y1="130" x2={width - 10} y2="130" stroke="#1d1a18" strokeWidth="1" strokeDasharray="2 4" />
+          <line x1="10" y1="55" x2={width - 10} y2="55" stroke="#1d1a18" strokeWidth="1" strokeDasharray="2 4" />
+          <line x1="10" y1="105" x2={width - 10} y2="105" stroke="#1d1a18" strokeWidth="1" strokeDasharray="2 4" />
 
           {/* Technical Waves (Zero drop-shadow, flat 1.5px / 1px strokes) */}
           <path
@@ -262,9 +262,9 @@ export const HyperWaveCard = ({
           {hoverX !== null && (
             <line
               x1={Math.min(Math.max(hoverX, 10), width - 10)}
-              y1="10"
+              y1="5"
               x2={Math.min(Math.max(hoverX, 10), width - 10)}
-              y2={height - 10}
+              y2={height - 5}
               stroke="#fafafa"
               strokeWidth="1"
               strokeDasharray="2 2"
@@ -273,10 +273,20 @@ export const HyperWaveCard = ({
         </svg>
       </div>
 
-      {/* Terminal Footer */}
-      <div className="h-8 bg-[#161413] border-t border-[#1d1a18] px-4 flex items-center justify-between text-[11px] font-mono text-[#8a8380]">
-        <span>CH_01: ORÇAMENTO DINÂMICO</span>
-        <span className="text-[#a0ca92]">LIVE_STREAM</span>
+      {/* Terminal Footer com Enquadramento Perfeito e Badge Exclusivo */}
+      <div className="h-9 shrink-0 bg-[#161413] border-t border-[#3d3a39] px-4 flex items-center justify-between text-[11px] font-mono text-[#8a8380] select-none z-10">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#3d3a39]" />
+          <span className="text-[10px] uppercase tracking-wider text-[#8a8380]">
+            CH 01: ORÇAMENTO DINÂMICO
+          </span>
+        </div>
+
+        {/* Badge LIVE STREAM com enquadramento e espaçamento precisos */}
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] bg-[#1d1a18] border border-[#a0ca92]/40 text-[#a0ca92] text-[10px] font-mono tracking-wider font-semibold">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#a0ca92] animate-pulse shrink-0" />
+          <span>LIVE STREAM</span>
+        </div>
       </div>
     </div>
   );

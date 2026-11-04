@@ -356,9 +356,18 @@ export const HyperStarburstCard = ({
       </div>
 
       {/* Terminal Footer */}
-      <div className="h-8 bg-[#161413] border-t border-[#1d1a18] px-4 flex items-center justify-between text-[11px] font-mono text-[#8a8380]">
-        <span>CH_02: 32 POLAR RADIAL HARMONICS</span>
-        <span className="text-[#eeeeee]">OK // SYNCED</span>
+      <div className="h-9 shrink-0 bg-[#161413] border-t border-[#3d3a39] px-4 flex items-center justify-between text-[11px] font-mono text-[#8a8380] select-none z-10">
+        <div className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#3d3a39]" />
+          <span className="text-[10px] uppercase tracking-wider text-[#8a8380]">
+            CH 02: 32 POLAR RADIAL HARMONICS
+          </span>
+        </div>
+
+        <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[2px] bg-[#1d1a18] border border-[#3d3a39] text-[#eeeeee] text-[10px] font-mono tracking-wider font-semibold">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#a0ca92]" />
+          <span>OK // SYNCED</span>
+        </div>
       </div>
     </div>
   );

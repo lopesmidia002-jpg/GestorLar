@@ -47,6 +47,7 @@ pie title Distribuição Orçamentária Familiar
   - **Geometria Precisa:** Bordas hairline de 1px em Ash Stroke (`#3d3a39`), botões e navegação em raio plano de 3px, painéis em 10px e ausência de drop-shadows.
 - **Edição em Linha (Click-to-Edit):** Qualquer valor monetário, categoria ou status pode ser editado diretamente na interface, dispensando formulários modais excessivos.
 - **Gráficos Vivos a 60 FPS:** Renderização contínua orientada a equações senoidais e harmônicas em SVG sem bibliotecas pesadas de animação externa, estilizados em traços vetoriais matemáticos nítidos sem desfoque.
+- **Enquadramento e Alinhamento Técnico Estrito:** Todos os instrumentos contam com rodapés e badges protegidos por `shrink-0` e dimensões invariantes, prevenindo colisão ou corte visual nas bordas dos painéis.
 - **Offline Total e Autonomia:** O usuário pode gerenciar receitas, contas e despesas no metrô, avião ou locais sem sinal. As informações persistem de modo atômico e sincronizam em segundo plano ao reconectar.
 
 ---

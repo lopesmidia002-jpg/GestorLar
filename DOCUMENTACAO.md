@@ -146,6 +146,12 @@ Conversão para o plano cartesiano bidimensional $(x, y)$:
 $$x = cx + r(\theta) \times \cos(\theta)$$
 $$y = cy + r(\theta) \times \sin(\theta)$$
 
+### 5.3 Enquadramento dos Instrumentos e Badges do War Room (`HyperWaveCard`)
+Para assegurar alinhamento e impedir compressão de elementos em telas de diferentes proporções:
+1. **Rodapé Imutável (`shrink-0` e `h-9`):** O rodapé terminal dos instrumentos opera com altura fixa de 36px e prevenção de encolhimento flex (`shrink-0`), garantindo que a borda inferior arredondada do card nunca corte os rótulos de canal e os badges de telemetria.
+2. **Badge Estruturado `LIVE STREAM`:** O indicador de fluxo contínuo foi estruturado em um badge dedicado (fundo Carbon `#1d1a18`, borda hairline em Metric Green `#a0ca92]/40`, tipografia Geist Mono e pulso de status ativo).
+3. **Escalonamento Responsivo do SVG:** A área gráfica utiliza `flex-1` com altura adaptativa e viewBox otimizado, mantendo as amplitudes senoidais perfeitamente contidas.
+
 ---
 
 ## 6. Configuração PWA Manifest & Políticas de Cache
