@@ -9,7 +9,12 @@ import {
   Circle, 
   Check, 
   X,
+  MessageSquare,
 } from 'lucide-react';
+import { 
+  dispararWhatsApp, 
+  gerarMensagemWhatsAppIndividual 
+} from '../services/whatsappReminderService';
 
 interface Props {
   itens: ItemLancamento[];
@@ -524,17 +529,31 @@ export const LedgerDespesas = ({
 
                       {/* Ações */}
                       <td className="py-2.5 px-3 text-center">
-                        <button
-                          onClick={() => {
-                            if (window.confirm(`Excluir o lançamento "${item.titulo}"?`)) {
-                              onRemoverItem(item.id);
-                            }
-                          }}
-                          className="text-[#4d4947] hover:text-[#ee6018] transition-colors cursor-pointer"
-                          title="Excluir item"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          {!item.pago && (
+                            <button
+                              onClick={() => {
+                                const msg = gerarMensagemWhatsAppIndividual(item);
+                                dispararWhatsApp(msg);
+                              }}
+                              className="text-[#8a8380] hover:text-[#25D366] transition-colors cursor-pointer"
+                              title="Enviar lembrete no WhatsApp"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Excluir o lançamento "${item.titulo}"?`)) {
+                                onRemoverItem(item.id);
+                              }
+                            }}
+                            className="text-[#4d4947] hover:text-[#ee6018] transition-colors cursor-pointer"
+                            title="Excluir item"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

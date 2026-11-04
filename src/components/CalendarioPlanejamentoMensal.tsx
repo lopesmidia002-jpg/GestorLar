@@ -10,8 +10,14 @@ import {
   Plus, 
   Trash2, 
   X, 
-  CalendarCheck2
+  CalendarCheck2,
+  MessageSquare
 } from 'lucide-react';
+import { 
+  dispararWhatsApp, 
+  gerarMensagemWhatsAppIndividual, 
+  gerarMensagemWhatsAppDia 
+} from '../services/whatsappReminderService';
 
 interface Props {
   itens: ItemLancamento[];
@@ -529,14 +535,32 @@ export const CalendarioPlanejamentoMensal = ({
                 </div>
               </div>
 
-              {/* Botão Novo Agendamento no Dia */}
-              <button
-                onClick={() => setMostrandoAgendamento(!mostrandoAgendamento)}
-                className="px-3 py-1.5 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] font-mono text-xs uppercase tracking-tight flex items-center justify-center gap-1.5 cursor-pointer transition"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Agendar no Dia {diaSelecionado}</span>
-              </button>
+              {/* Botões de Ação do Dia */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Botão Lembrar Dia no WhatsApp */}
+                {itensDoDiaSelecionado.some(it => !it.pago) && (
+                  <button
+                    onClick={() => {
+                      const msg = gerarMensagemWhatsAppDia(diaSelecionado, MESES[mes], itensDoDiaSelecionado);
+                      dispararWhatsApp(msg);
+                    }}
+                    className="px-3 py-1.5 rounded-[3px] bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/40 text-[#25D366] font-mono text-xs uppercase tracking-tight flex items-center justify-center gap-1.5 cursor-pointer transition"
+                    title="Enviar lista de pendências deste dia para o WhatsApp"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" />
+                    <span>Lembrar Dia no WhatsApp</span>
+                  </button>
+                )}
+
+                {/* Botão Novo Agendamento no Dia */}
+                <button
+                  onClick={() => setMostrandoAgendamento(!mostrandoAgendamento)}
+                  className="px-3 py-1.5 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] font-mono text-xs uppercase tracking-tight flex items-center justify-center gap-1.5 cursor-pointer transition"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Agendar no Dia {diaSelecionado}</span>
+                </button>
+              </div>
             </div>
 
             {/* Formulário Inline de Novo Agendamento */}
@@ -695,18 +719,34 @@ export const CalendarioPlanejamentoMensal = ({
                         )}
                       </button>
 
-                      {/* Excluir */}
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`Excluir "${item.titulo}"?`)) {
-                            onRemoverItem(item.id);
-                          }
-                        }}
-                        className="text-[#8a8380] hover:text-[#ee6018] transition p-1"
-                        title="Remover lançamento"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        {/* Botão Enviar no WhatsApp */}
+                        {!item.pago && (
+                          <button
+                            onClick={() => {
+                              const msg = gerarMensagemWhatsAppIndividual(item);
+                              dispararWhatsApp(msg);
+                            }}
+                            className="p-1 text-[#8a8380] hover:text-[#25D366] transition cursor-pointer"
+                            title="Enviar lembrete desta conta no WhatsApp"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
+                        {/* Excluir */}
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Excluir "${item.titulo}"?`)) {
+                              onRemoverItem(item.id);
+                            }
+                          }}
+                          className="text-[#8a8380] hover:text-[#ee6018] transition p-1 cursor-pointer"
+                          title="Remover lançamento"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}

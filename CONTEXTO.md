@@ -89,3 +89,15 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
 - **Métricas Chave de Caixa:** Monitoramento de Previsto vs. Quitado, saldo em aberto e identificação automática do dia com pico de vencimentos.
 - **Agendamento Direto no Dia:** Abertura de gaveta de detalhes da data ao clicar em qualquer dia, permitindo marcar obrigações como pagas, remover lançamentos e agendar novas despesas/investimentos diretamente no dia selecionado.
 
+---
+
+## 10. Central de Lembretes de Vencimento via WhatsApp
+- **Detecção Inteligente de Prazos:** Varredura automática das despesas não pagas, calculando prazos para contas que vencem no dia, dentro da janela configurada (1 a 7 dias de antecedência) ou atrasadas.
+- **Mensagem Formatada Profissional:** Resumo com emojis, listas de itens, valores e totalizadores, pronto para envio no WhatsApp Web ou App móvel.
+- **Disparos em Múltiplos Pontos de Contato:**
+  - Banner dinâmico no topo do painel com botão de disparo imediato.
+  - Botão WhatsApp com contador de pendências no cabeçalho persistente.
+  - Ícone de envio direto em cada linha do Ledger e em cada card de conta do Calendário Mensal.
+  - Respostas no Assistente Copilot para consultas por voz e texto sobre contas a vencer.
+- **Persistência de Preferências:** Salva número de telefone e parâmetros de antecedência no `localStorage`.
+

@@ -234,3 +234,23 @@ O componente `CalendarioPlanejamentoMensal` implementa uma visão temporal do fl
    - **Pico de Vencimentos:** Identificação automática do dia de maior pressão de caixa no mês.
 4. **Inspetor Interativo de Dia:** Ao clicar em qualquer data do mês, abre-se um painel de detalhes permitindo alternar status de pagamento (*pago / pendente*), deletar o item ou realizar o agendamento rápido de um novo lançamento diretamente naquela data.
 5. **Filtros por Pilar e Status:** Filtragem em tempo real por pilar orçamentário (`Todos`, `Fixas`, `Supérfluos`, `Investimentos`) e status de quitação (`Pendentes`, `Quitados`).
+
+---
+
+## 11. Sistema de Lembretes de Vencimento via WhatsApp (`whatsappReminderService`)
+
+### 11.1 Arquitetura e Monitoramento Temporal
+O subsistema `whatsappReminderService` monitora continuamente todas as despesas e compromissos do orçamento familiar para identificar contas a vencer ou com vencimento próximo:
+1. **Detecção e Cálculo de Prazos (`calcularDataVencimento` e `analisarContasParaLembrete`):**
+   - *Contas que Vencem Hoje:* Contas não quitadas cuja data ou dia de vencimento coincide com o dia atual (`diasRestantes === 0`).
+   - *Contas Próximas ao Vencimento:* Contas não quitadas cujo vencimento ocorrerá dentro da janela de antecedência configurada pelo usuário (padrão: 3 dias).
+   - *Contas Atrasadas:* Contas não quitadas cujo dia de vencimento já transcorreu no ciclo atual.
+2. **Formatação Semântica de Mensagens:**
+   - *Mensagem Consolidada:* Gera resumo estruturado com marcadores de prioridade (🔴 *VENCE HOJE*, ⏰ *VENCENDO NOS PRÓXIMOS DIAS*, ⚠️ *ATRASADAS*), agrupando valor individual, pilar orçamentário (50-30-20), total previsto e chamada para liquidação no GestorLar.
+   - *Mensagem Individual por Item:* Permite disparar lembrete pontual focado em uma única conta.
+   - *Mensagem por Dia do Calendário:* Permite enviar a pauta completa de pagamentos de uma data específica inspecionada no calendário.
+3. **Disparo Direto para API do WhatsApp:**
+   - Normaliza telefones brasileiros e internacionais (`55 + DDD + número`).
+   - Aciona `https://api.whatsapp.com/send` ou `https://wa.me/` com texto pré-preenchido e codificado via `encodeURIComponent`, compatível com WhatsApp Web no Desktop e aplicativo móvel oficial (Android/iOS).
+4. **Banner de Alerta Ativo (`BannerLembreteWhatsApp`):** Notificação em tempo real no topo do painel quando houver contas a vencer, permitindo envio imediato no WhatsApp com 1 clique.
+5. **Central de Configuração (`ModalLembretesWhatsApp`):** Interface modal para ajuste de número do WhatsApp, dias de antecedência, ativação/desativação de contas atrasadas e pré-visualização em tempo real do texto da mensagem antes do envio.

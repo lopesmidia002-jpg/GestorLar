@@ -5,12 +5,13 @@ import { formatarBRL, formatarPercentual, parseMoedaBR } from '../utils/calculat
 import { 
   Edit3, 
   Check, 
-  X,
-  RotateCcw,
-  RefreshCw,
-  Bell,
-  Database,
-  Trash2
+  X, 
+  RotateCcw, 
+  RefreshCw, 
+  Bell, 
+  Database, 
+  Trash2,
+  MessageSquare
 } from 'lucide-react';
 
 interface Props {
@@ -20,6 +21,8 @@ interface Props {
   statusSync?: StatusSyncNuvem;
   onSincronizar?: () => void;
   onAbrirNotificacoes?: () => void;
+  onAbrirWhatsApp?: () => void;
+  totalLembretesWhatsApp?: number;
   onAbrirNuvem?: () => void;
   onAtualizarRenda: (novaRenda: number) => void;
   onAjustarTotalGeral?: (novoTotal: number) => void;
@@ -34,6 +37,8 @@ export const HeaderMotorRenda = ({
   statusSync = 'local_only',
   onSincronizar,
   onAbrirNotificacoes,
+  onAbrirWhatsApp,
+  totalLembretesWhatsApp = 0,
   onAbrirNuvem,
   onAtualizarRenda,
   onAjustarTotalGeral,
@@ -158,6 +163,23 @@ export const HeaderMotorRenda = ({
               title="Notificações push"
             >
               <Bell className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {/* Lembretes de Vencimento no WhatsApp */}
+          {onAbrirWhatsApp && (
+            <button
+              onClick={onAbrirWhatsApp}
+              className="h-[34px] px-2.5 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#25D366] text-[#8a8380] hover:text-[#25D366] flex items-center gap-1.5 font-mono text-xs uppercase tracking-tight cursor-pointer transition-colors relative"
+              title="Lembretes de contas a vencer no WhatsApp"
+            >
+              <MessageSquare className="w-3.5 h-3.5 text-[#25D366]" />
+              <span className="hidden sm:inline">WhatsApp</span>
+              {totalLembretesWhatsApp > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-[#ee6018] text-[#101010] text-[9px] font-bold">
+                  {totalLembretesWhatsApp}
+                </span>
+              )}
             </button>
           )}
 

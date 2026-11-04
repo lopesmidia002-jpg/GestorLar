@@ -664,6 +664,35 @@ Entendo qualquer comando em linguagem natural por texto ou voz! Exemplos que voc
   }
 
   // -----------------------------------------------------------------------
+  // CONSULTA 4.1: Lembretes de Vencimento e WhatsApp
+  // -----------------------------------------------------------------------
+  if (
+    cmdMinusculo.includes('whatsapp') ||
+    cmdMinusculo.includes('lembrete') ||
+    cmdMinusculo.includes('lembrar contas') ||
+    cmdMinusculo.includes('contas a vencer') ||
+    cmdMinusculo.includes('vencendo')
+  ) {
+    const pendentes = estadoAtual.itens.filter((it) => !it.pago);
+    if (pendentes.length === 0) {
+      return {
+        sucesso: true,
+        acaoExecutada: 'LEMBRETE_WHATSAPP',
+        mensagemResposta: '✅ **Nenhuma conta a vencer!** Todas as despesas cadastradas já estão quitadas.',
+      };
+    }
+
+    const totalPendente = pendentes.reduce((acc, it) => acc + it.valor, 0);
+    const lista = pendentes.slice(0, 5).map((it) => `• **${it.titulo}**: ${formatarBRL(it.valor)} (${it.vencimento})`).join('\n');
+
+    return {
+      sucesso: true,
+      acaoExecutada: 'LEMBRETE_WHATSAPP',
+      mensagemResposta: `📲 **Lembretes de Contas a Vencer:**\n\nIdentifiquei **${pendentes.length} conta(s) pendente(s)** somando **${formatarBRL(totalPendente)}**:\n\n${lista}${pendentes.length > 5 ? `\n• ... e mais ${pendentes.length - 5} conta(s)` : ''}\n\n👉 Para disparar o resumo formatado para o seu celular, use o botão **WhatsApp** no topo ou o banner de lembrete!`,
+    };
+  }
+
+  // -----------------------------------------------------------------------
   // INTENÇÃO B: Atualização de Renda Familiar / Salário
   // Ex: "meu salário aumentou para 12k", "minha renda é 8500", "ganhei aumento agora é 10 mil"
   // -----------------------------------------------------------------------
