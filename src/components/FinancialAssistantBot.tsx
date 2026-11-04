@@ -67,6 +67,9 @@ export const FinancialAssistantBot = ({
 
   const recognitionRef = useRef<any>(null);
   const ultimoComandoRef = useRef<string>('');
+  const ouvindoVozRef = useRef(false);
+  const silencioTimerRef = useRef<any>(null);
+  const tratarEnvioTextoRef = useRef<(textoComando?: string, idempotencyKeyParam?: string) => Promise<void>>(() => Promise.resolve());
   const inputRef = useRef<HTMLInputElement | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -121,49 +124,80 @@ export const FinancialAssistantBot = ({
     try {
       const recognition = new SpeechRecognition();
       recognition.lang = 'pt-BR';
-      recognition.continuous = false;
+      recognition.continuous = true;
       recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
 
       recognition.onstart = () => {
+        ouvindoVozRef.current = true;
         setOuvindoVoz(true);
-        setTranscricaoAoVivo('');
-        ultimoComandoRef.current = '';
       };
 
       recognition.onresult = (event: any) => {
         let transcriptInterim = '';
         let transcriptFinal = '';
 
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            transcriptFinal += event.results[i][0].transcript;
+        for (let i = 0; i < event.results.length; ++i) {
+          const res = event.results[i];
+          if (res.isFinal) {
+            transcriptFinal += res[0].transcript + ' ';
           } else {
-            transcriptInterim += event.results[i][0].transcript;
+            transcriptInterim += res[0].transcript;
           }
         }
 
-        const textoDetectado = (transcriptFinal || transcriptInterim).trim();
+        const textoDetectado = (transcriptFinal + transcriptInterim).trim();
         if (textoDetectado) {
           setTranscricaoAoVivo(textoDetectado);
           setInputTexto(textoDetectado);
-        }
+          ultimoComandoRef.current = textoDetectado;
 
-        if (transcriptFinal) {
-          ultimoComandoRef.current = transcriptFinal.trim();
+          // Se o usuário parar de falar por 1.8 segundos, envia automaticamente
+          if (silencioTimerRef.current) {
+            clearTimeout(silencioTimerRef.current);
+          }
+          silencioTimerRef.current = setTimeout(() => {
+            if (ouvindoVozRef.current && recognitionRef.current) {
+              try {
+                recognitionRef.current.stop();
+              } catch (e) {
+                console.warn('Erro ao finalizar gravação por silêncio:', e);
+              }
+            }
+          }, 1800);
         }
       };
 
       recognition.onerror = (event: any) => {
+        if (event.error === 'no-speech' || event.error === 'aborted') {
+          // Pausa sem fala ou parada manual intencional: não abortar
+          return;
+        }
         console.warn('Evento no reconhecimento de fala:', event.error);
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          alert('Permissão de microfone negada. Conceda permissão no navegador para falar com o assistente.');
+        }
+        if (silencioTimerRef.current) {
+          clearTimeout(silencioTimerRef.current);
+          silencioTimerRef.current = null;
+        }
+        ouvindoVozRef.current = false;
         setOuvindoVoz(false);
-        setTranscricaoAoVivo('');
       };
 
       recognition.onend = () => {
+        if (silencioTimerRef.current) {
+          clearTimeout(silencioTimerRef.current);
+          silencioTimerRef.current = null;
+        }
+
+        const eraOuvindo = ouvindoVozRef.current;
+        ouvindoVozRef.current = false;
         setOuvindoVoz(false);
-        const textoDisparar = ultimoComandoRef.current || transcricaoAoVivo;
-        if (textoDisparar && textoDisparar.trim().length > 0) {
-          tratarEnvioTexto(textoDisparar.trim());
+
+        const textoDisparar = (ultimoComandoRef.current || '').trim();
+        if (eraOuvindo && textoDisparar.length > 0) {
+          tratarEnvioTextoRef.current(textoDisparar);
           ultimoComandoRef.current = '';
           setTranscricaoAoVivo('');
         }
@@ -176,6 +210,9 @@ export const FinancialAssistantBot = ({
     }
 
     return () => {
+      if (silencioTimerRef.current) {
+        clearTimeout(silencioTimerRef.current);
+      }
       if (recognitionRef.current) {
         try {
           recognitionRef.current.abort();
@@ -184,7 +221,7 @@ export const FinancialAssistantBot = ({
         }
       }
     };
-  }, [transcricaoAoVivo]);
+  }, []);
 
   const falarResposta = (texto: string) => {
     if (!falaAtiva || !('speechSynthesis' in window)) return;
@@ -212,21 +249,32 @@ export const FinancialAssistantBot = ({
       return;
     }
 
-    if (ouvindoVoz) {
+    if (ouvindoVozRef.current) {
+      if (silencioTimerRef.current) {
+        clearTimeout(silencioTimerRef.current);
+        silencioTimerRef.current = null;
+      }
       try {
         recognitionRef.current.stop();
       } catch (e) {
         console.warn('Erro ao parar reconhecimento:', e);
       }
-      setOuvindoVoz(false);
     } else {
       try {
+        if (silencioTimerRef.current) {
+          clearTimeout(silencioTimerRef.current);
+          silencioTimerRef.current = null;
+        }
         setInputTexto('');
         setTranscricaoAoVivo('');
         ultimoComandoRef.current = '';
+        ouvindoVozRef.current = true;
+        setOuvindoVoz(true);
         recognitionRef.current.start();
       } catch (e) {
         console.warn('Erro ao iniciar reconhecimento:', e);
+        ouvindoVozRef.current = false;
+        setOuvindoVoz(false);
       }
     }
   };
@@ -303,6 +351,11 @@ export const FinancialAssistantBot = ({
       setProcessando(false);
     }
   };
+
+  // Mantém a ref sincronizada para callbacks assíncronos de áudio/voz sem re-renderizar
+  useEffect(() => {
+    tratarEnvioTextoRef.current = tratarEnvioTexto;
+  });
 
   // ========================================================
   // 13. EXECUÇÃO DE CONFIRMAÇÃO PROPOSTA
@@ -523,24 +576,24 @@ export const FinancialAssistantBot = ({
                           <button
                             onClick={() => confirmarProposta(msg.id, msg.proposta!.token)}
                             disabled={processando}
-                            className="flex-1 py-1.5 px-3 rounded-lg bg-[#00FF87] hover:bg-[#00FF87]/90 text-[#07080b] font-bold flex items-center justify-center gap-1 transition text-xs cursor-pointer disabled:opacity-50"
+                            className="flex-1 py-1.5 px-3 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] font-mono text-xs uppercase tracking-tight flex items-center justify-center gap-1 transition cursor-pointer disabled:opacity-50"
                           >
                             <Check className="w-3.5 h-3.5" /> Confirmar
                           </button>
                           <button
                             onClick={() => cancelarProposta(msg.id)}
                             disabled={processando}
-                            className="py-1.5 px-3 rounded-lg bg-[#1f2433] hover:bg-[#282f42] text-[#9CA3AF] hover:text-white font-medium flex items-center justify-center gap-1 transition text-xs cursor-pointer"
+                            className="py-1.5 px-3 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#8a8380] text-[#eeeeee] font-mono text-xs uppercase tracking-tight flex items-center justify-center gap-1 transition cursor-pointer"
                           >
                             <X className="w-3.5 h-3.5" /> Cancelar
                           </button>
                         </div>
                       ) : (
                         <div className="pt-1 text-center">
-                          <span className={`text-[10px] font-mono px-2 py-0.5 rounded ${
+                          <span className={`text-[10px] font-mono px-2 py-0.5 rounded-[3px] ${
                             msg.proposta.status === 'confirmado' 
-                              ? 'bg-[#00FF87]/20 text-[#00FF87]' 
-                              : 'bg-rose-500/20 text-rose-400'
+                              ? 'bg-[#a0ca92]/20 text-[#a0ca92] border border-[#a0ca92]/30' 
+                              : 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
                           }`}>
                             Proposta {msg.proposta.status}
                           </span>
@@ -551,19 +604,19 @@ export const FinancialAssistantBot = ({
 
                   {/* Botão de Repetir Operação (com Idempotência) em caso de erro */}
                   {msg.permiteRepetir && msg.comandoRepetir && (
-                    <div className="mt-2 pt-2 border-t border-[#1f2638] flex items-center justify-between">
-                      <span className="text-[10px] text-[#9CA3AF]">Deseja tentar novamente?</span>
+                    <div className="mt-2 pt-2 border-t border-[#3d3a39] flex items-center justify-between">
+                      <span className="text-[10px] text-[#8a8380] font-mono">Deseja tentar novamente?</span>
                       <button
                         onClick={() => tratarEnvioTexto(msg.comandoRepetir, msg.idempotencyKey)}
                         disabled={processando}
-                        className="inline-flex items-center gap-1 text-[10px] font-mono text-[#00FF87] hover:underline"
+                        className="inline-flex items-center gap-1 text-[10px] font-mono text-[#ee6018] hover:underline"
                       >
                         <RotateCcw className="w-3 h-3" /> Repetir comando
                       </button>
                     </div>
                   )}
 
-                  <span className="text-[9px] font-mono text-[#4B5563] block text-right mt-1.5">
+                  <span className="text-[9px] font-mono text-[#8a8380] block text-right mt-1.5">
                     {msg.hora}
                   </span>
                 </div>
@@ -572,18 +625,18 @@ export const FinancialAssistantBot = ({
 
             {/* Visualizador de Fala em Tempo Real (Transcreve enquanto fala sem gravar arquivo) */}
             {ouvindoVoz && (
-              <div className="p-3.5 rounded-2xl bg-[#00FF87]/10 border border-[#00FF87]/40 text-white animate-fadeIn flex items-center justify-between">
+              <div className="p-3 rounded-[3px] bg-[#1d1a18] border border-[#ee6018]/50 text-[#eeeeee] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="relative">
-                    <div className="w-3.5 h-3.5 rounded-full bg-[#00FF87] animate-ping" />
-                    <div className="absolute inset-0 w-3.5 h-3.5 rounded-full bg-[#00FF87]" />
+                  <div className="relative flex items-center justify-center w-3.5 h-3.5">
+                    <div className="w-3.5 h-3.5 rounded-full bg-[#ee6018] animate-ping" />
+                    <div className="absolute inset-0 w-3.5 h-3.5 rounded-full bg-[#ee6018]" />
                   </div>
                   <div>
-                    <span className="text-xs font-bold text-white block">
-                      Ouvindo sua fala em tempo real...
+                    <span className="text-[11px] font-mono font-medium text-[#ee6018] uppercase tracking-wider block">
+                      REC_AUDIO // ESCUTANDO EM TEMPO REAL...
                     </span>
-                    <span className="text-[11px] text-[#00FF87] font-mono font-medium">
-                      {transcricaoAoVivo ? `"${transcricaoAoVivo}"` : 'Fale agora seu comando (ex: "Almoço 35", "Paguei a luz")...'}
+                    <span className="text-xs text-[#fafafa] font-mono">
+                      {transcricaoAoVivo ? `"${transcricaoAoVivo}"` : 'Fale agora seu comando (ex: "Almoço 45", "Coloque 50 de almoço")...'}
                     </span>
                   </div>
                 </div>
@@ -591,7 +644,7 @@ export const FinancialAssistantBot = ({
                 <button
                   type="button"
                   onClick={alternarReconhecimentoVoz}
-                  className="px-2.5 py-1 rounded-lg bg-[#141824] hover:bg-[#1e2333] text-white text-[11px] font-medium border border-[#2a324b] transition cursor-pointer"
+                  className="px-2.5 py-1 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] text-[11px] font-mono tracking-tight uppercase cursor-pointer"
                 >
                   Concluir
                 </button>
@@ -600,10 +653,10 @@ export const FinancialAssistantBot = ({
 
             {/* Spinner de Processamento */}
             {processando && (
-              <div className="flex items-center gap-2 p-3 rounded-2xl bg-[#00FF87]/5 border border-[#00FF87]/20 text-[#00FF87] animate-pulse">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-xs font-mono">
-                  Interpretando fala e atualizando orçamento...
+              <div className="flex items-center gap-2 p-3 rounded-[3px] bg-[#1d1a18] border border-[#3d3a39] text-[#ee6018]">
+                <Loader2 className="w-4 h-4 animate-spin text-[#ee6018]" />
+                <span className="text-xs font-mono uppercase tracking-wider text-[#eeeeee]">
+                  INTERPRETANDO COMANDO E ATUALIZANDO LEDGER...
                 </span>
               </div>
             )}
@@ -612,13 +665,13 @@ export const FinancialAssistantBot = ({
           </div>
 
           {/* Chips de Comandos Sugeridos */}
-          <div className="px-4 py-2 border-t border-[#161924] bg-[#0c0e14] overflow-x-auto whitespace-nowrap flex gap-1.5 scrollbar-thin">
+          <div className="px-4 py-2 border-t border-[#3d3a39] bg-[#101010] overflow-x-auto whitespace-nowrap flex gap-1.5 scrollbar-thin">
             {comandosSugeridos.map((cmd, idx) => (
               <button
                 key={idx}
                 onClick={() => tratarEnvioTexto(cmd)}
                 disabled={processando || ouvindoVoz}
-                className="px-2.5 py-1 rounded-full text-[11px] font-mono text-[#9CA3AF] hover:text-white bg-[#141722] hover:bg-[#1a1e2d] border border-[#222738] transition cursor-pointer disabled:opacity-40"
+                className="px-2.5 py-1 rounded-[3px] text-[11px] font-mono text-[#8a8380] hover:text-[#eeeeee] hover:border-[#8a8380] bg-[#1d1a18] border border-[#3d3a39] transition cursor-pointer disabled:opacity-40"
               >
                 {cmd}
               </button>
@@ -630,6 +683,17 @@ export const FinancialAssistantBot = ({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+                if (ouvindoVozRef.current && recognitionRef.current) {
+                  if (silencioTimerRef.current) {
+                    clearTimeout(silencioTimerRef.current);
+                    silencioTimerRef.current = null;
+                  }
+                  try {
+                    recognitionRef.current.stop();
+                  } catch {}
+                  ouvindoVozRef.current = false;
+                  setOuvindoVoz(false);
+                }
                 tratarEnvioTexto();
               }}
               className="flex items-center gap-2"

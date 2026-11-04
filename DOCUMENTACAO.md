@@ -188,3 +188,14 @@ $$y = cy + r(\theta) \times \sin(\theta)$$
 ## 7. Diretrizes de Segurança e Privacidade
 - **Dados Locais por Padrão:** Todas as informações financeiras de valores e descrições residem inicialmente no dispositivo do usuário, garantindo sigilo bancário.
 - **Preparação para Nuvem Segura (E2EE):** Qualquer futura camada de sincronização remota (Supabase/Firebase) deve aplicar criptografia ponta a ponta antes da transmissão.
+
+---
+
+## 8. Arquitetura do Assistente por Voz e Reconhecimento de Fala Contínuo
+
+### 8.1 Ciclo de Vida do Web Speech API (`SpeechRecognition`)
+O assistente `FACTORY // COPILOT_TERMINAL.SYS` opera com reconhecimento de fala contínuo e em tempo real no navegador:
+1. **Instanciação Estável (`useEffect` desvinculado de estado):** O `SpeechRecognition` é configurado uma única vez na montagem do componente, impedindo que atualizações intermediárias de transcrição abortem a escuta prematuramente.
+2. **Modo Contínuo (`continuous = true`, `interimResults = true`):** A escuta permanece aberta durante micro-pausas do usuário enquanto fala números e comandos complexos (ex: *"Coloque 50 de almoço"*, *"Adiciona 100 de luz e 200 de mercado"*).
+3. **Detector de Silêncio Inteligente (Auto-Submit):** Um timer de inatividade de 1.8 segundos após a última palavra detectada conclui a gravação e dispara a interpretação e atualização contábil sem necessidade de cliques manuais.
+4. **Reconstrução Semântica e Limpeza de Stopwords:** O módulo `aiAssistantParser` sanitiza números por extenso e comandos coloquiais (*coloque*, *anota*, *lança*, *bota*, *de*, *no*, *reais*), extraindo o título categorizado e o valor numérico com precisão estrita.

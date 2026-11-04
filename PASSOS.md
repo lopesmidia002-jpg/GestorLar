@@ -119,3 +119,4 @@ Conforme especificado no item 6 do blueprint executivo, as próximas fases de ex
 2. **Resiliência Offline:** Fechar a aba, desconectar a internet, abrir novamente e continuar editando e salvando lançamentos normalmente.
 3. **Fidelidade à Metodologia 50-30-20:** Totalizadores matemáticos e barras de limites atualizados em tempo real a cada caractere digitado.
 4. **Ergonomia Mobile:** Toques confortáveis, botões de ação rápida e interface totalmente adaptada a telas de smartphones e desktops.
+5. **Reconhecimento de Voz Contínuo:** Fala contínua sem cancelamento precoce no Web Speech API, transcrição ao vivo e detecção de silêncio para comandos naturais.

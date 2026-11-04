@@ -67,3 +67,10 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
 - **Tempo Real (Supabase Realtime):** Lançamentos feitos no celular de um cônjuge refletem instantaneamente no computador ou tablet do outro sem recarregar a página.
 - **Migração Transparente:** Ao criar conta ou conectar pela primeira vez, os dados locais prévios são preservados e enviados para o banco de dados.
 
+---
+
+## 7. Assistente de Voz em Linguagem Natural (Factory Copilot)
+- **Operação de Voz Direta (Web Speech API):** O microfone transcreve e exibe a fala instantaneamente sem latência de upload de áudio, com modo contínuo resiliente a pausas naturais.
+- **Parser Semântico de Lançamentos:** Suporte a comandos coloquiais como *"Coloque 50 de almoço"*, *"Adiciona 100 de luz"*, *"Paguei a internet"*, com normalização de números por extenso, gírias monetárias (reais, conto, pila, k) e classificação automática no pilar 50-30-20.
+- **Auto-Envio por Silêncio:** Conclusão automática e envio do comando após 1.8 segundos de pausa na fala, fornecendo confirmação auditiva (TTS) e feedback visual imediato no ledger.
+

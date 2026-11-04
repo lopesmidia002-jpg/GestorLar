@@ -331,13 +331,14 @@ export function identificarCategoriaESubcategoria(texto: string): {
 // =========================================================================
 
 const STOPWORDS_LANCAMENTO = [
-  'adicionar', 'adiciona', 'adicionar aí', 'lançar', 'lanca', 'lance', 'novo', 'nova',
-  'despesa', 'gasto', 'gastei', 'comprei', 'paguei', 'quitei', 'coloque', 'coloca', 'anota', 'anote',
+  'adicionar', 'adiciona', 'adicione', 'adicionar aí', 'lançar', 'lancar', 'lanca', 'lance', 'novo', 'nova',
+  'despesa', 'gasto', 'gastei', 'comprei', 'paguei', 'quitei', 'coloque', 'coloca', 'colocar', 'bota', 'bote', 'botar', 'anota', 'anote', 'anotar',
   'valor', 'no', 'na', 'nos', 'nas', 'de', 'do', 'da', 'dos', 'das', 'por', 'pra', 'para',
   'em', 'um', 'uma', 'uns', 'umas', 'reais', 'real', 'conto', 'contos', 'pau', 'paus',
   'mango', 'mangos', 'pila', 'pilas', 'hoje', 'ontem', 'aqui', 'mais', 'favor', 'por favor',
-  'r$', 'pix', 'cartão', 'debito', 'débito', 'credito', 'crédito', 'comprei um', 'comprei uma',
-  'paguei o', 'paguei a', 'ia', 'bot', 'assistente', 'anota aí', 'bota aí', 'registra'
+  'r$', 'pix', 'cartão', 'cartao', 'debito', 'débito', 'credito', 'crédito', 'comprei um', 'comprei uma',
+  'paguei o', 'paguei a', 'ia', 'bot', 'assistente', 'anota aí', 'bota aí', 'registra', 'registre', 'registrar',
+  'insere', 'insira', 'inserir'
 ];
 
 export function extrairTituloLimpo(texto: string, subcategoriaPadrao: string): string {
@@ -346,6 +347,12 @@ export function extrairTituloLimpo(texto: string, subcategoriaPadrao: string): s
   // Remove valores numéricos e marcadores de quantia
   limpo = limpo.replace(/r\$\s?/gi, '');
   limpo = limpo.replace(/\b\d+(?:[.,]\d+)?\s*(?:k|mil|contos?|paus?|mangos?|pilas?|pratas?|reais|real)?\b/gi, '');
+
+  // Remove números por extenso para que não contaminem o título da despesa
+  for (const numExtenso of Object.keys(MAPA_EXTENSO)) {
+    const regExt = new RegExp(`\\b${numExtenso}\\b`, 'gi');
+    limpo = limpo.replace(regExt, ' ');
+  }
 
   // Remove stopwords conversacionais
   for (const sw of STOPWORDS_LANCAMENTO) {
@@ -656,6 +663,9 @@ Entendo qualquer comando em linguagem natural por texto ou voz! Exemplos que voc
     cmdMinusculo.includes('tá pago') ||
     cmdMinusculo.includes('ta pago') ||
     cmdMinusculo.includes('marcar como pago') ||
+    cmdMinusculo.includes('como pago') ||
+    cmdMinusculo.includes('coloca pago') ||
+    cmdMinusculo.includes('coloque pago') ||
     cmdMinusculo.includes('desmarcar') ||
     cmdMinusculo.includes('pendente') ||
     cmdMinusculo.includes('não pago')
