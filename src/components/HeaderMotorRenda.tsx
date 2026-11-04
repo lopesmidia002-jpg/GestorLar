@@ -110,6 +110,9 @@ export const HeaderMotorRenda = ({
           <a href="#pilares" className="hover:text-[#eeeeee] transition-colors">
             Pilares 50-30-20
           </a>
+          <a href="#calendario" className="hover:text-[#eeeeee] transition-colors">
+            Calendário
+          </a>
           <a href="#ledger" className="hover:text-[#eeeeee] transition-colors">
             Ledger
           </a>

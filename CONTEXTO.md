@@ -81,3 +81,11 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
 - **Limpeza Total ou Parcial:** Botão no cabeçalho persistente permitindo zerar completamente o painel (renda R$ 0 e lançamentos apagados) ou purgar apenas os lançamentos mantendo a renda familiar atual.
 - **Prevenção contra Exclusão Acidental:** Modal de confirmação `ModalZerarPainel` no padrão estético Factory, com feedback atômico local e atualização na nuvem.
 
+---
+
+## 9. Módulo de Calendário de Planejamento Mensal
+- **Planejamento Mês a Mês:** Navegação fluida entre meses com visão cronológica de todas as despesas e investimentos distribuídos em grade de 7 colunas (DOM a SÁB).
+- **Inteligência de Vencimento:** Suporte a vencimentos fixos recorrentes (ex: *"Dia 10"*) e datas fechadas (`YYYY-MM-DD` ou `DD/MM/YYYY`).
+- **Métricas Chave de Caixa:** Monitoramento de Previsto vs. Quitado, saldo em aberto e identificação automática do dia com pico de vencimentos.
+- **Agendamento Direto no Dia:** Abertura de gaveta de detalhes da data ao clicar em qualquer dia, permitindo marcar obrigações como pagas, remover lançamentos e agendar novas despesas/investimentos diretamente no dia selecionado.
+

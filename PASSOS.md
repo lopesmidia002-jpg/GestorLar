@@ -122,3 +122,4 @@ Conforme especificado no item 6 do blueprint executivo, as próximas fases de ex
 5. **Reconhecimento de Voz Contínuo:** Fala contínua sem cancelamento precoce no Web Speech API, transcrição ao vivo e detecção de silêncio para comandos naturais.
 6. **Alocação Direta por Pilar Falado:** Prioridade estrita ao pilar expressamente citado na fala/texto (*como supérfluo*, *no fixo*, *em investimentos*) e filtragem completa do nome do pilar do título do lançamento.
 7. **Zerar Painel Seguro:** Botão dedicado e modal de confirmação no Factory Design System para zerar dados (renda e lançamentos) sem recarregar a página.
+8. **Calendário de Planejamento Mensal:** Visualização temporal completa em grade de 7 colunas por mês com métricas de previstos vs. pagos, identificação de picos de vencimento, filtro por pilar/status e agendamento rápido direto no dia.

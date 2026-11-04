@@ -5,6 +5,7 @@ import { HyperWaveCard } from './components/HyperWaveCard';
 import { HyperStarburstCard } from './components/HyperStarburstCard';
 import { HyperRadarCard } from './components/HyperRadarCard';
 import { PilaresDoLar } from './components/PilaresDoLar';
+import { CalendarioPlanejamentoMensal } from './components/CalendarioPlanejamentoMensal';
 import { LedgerDespesas } from './components/LedgerDespesas';
 import { FinancialAssistantBot } from './components/FinancialAssistantBot';
 import { ModalNotificacoesFirebase } from './components/ModalNotificacoesFirebase';
@@ -160,7 +161,17 @@ export function App() {
           }}
         />
 
-        {/* 4. Ledger de Despesas & Aportes */}
+        {/* 4. Calendário de Planejamento Mensal de Vencimentos e Aportes */}
+        <CalendarioPlanejamentoMensal
+          itens={estado.itens}
+          rendaFamiliar={estado.rendaFamiliar}
+          onAdicionarItem={adicionarItem}
+          onAtualizarItem={atualizarItem}
+          onRemoverItem={removerItem}
+          onAlternarPago={alternarPago}
+        />
+
+        {/* 5. Ledger de Despesas & Aportes */}
         <LedgerDespesas
           itens={estado.itens}
           filtroPilar={filtroPilar}

@@ -216,3 +216,21 @@ O sistema dispõe de rotina controlada para zerar o painel via interface ou coma
 2. **Zerar Apenas Gastos:** Limpa todas as despesas e investimentos mantendo a renda líquida atual configurada.
 3. **Modal de Confirmação (`ModalZerarPainel`):** Interface modal estilizada no Factory Design System com confirmação explícita de duas etapas para prevenir limpezas acidentais.
 4. **Comando de Voz Integrado:** Capacidade do assistente IA interpretar frases como *"Zerar o painel"*, *"Limpar todo o painel"* ou *"Zerar tudo"*, executando a ação e fornecendo feedback falado e visual.
+
+---
+
+## 10. Módulo de Calendário e Planejamento Mensal (`CalendarioPlanejamentoMensal`)
+
+### 10.1 Arquitetura e Engenharia do Planejador
+O componente `CalendarioPlanejamentoMensal` implementa uma visão temporal do fluxo de caixa doméstico projetado para o mês selecionado:
+1. **Navegação Temporal Universal:** Seletores de mês e ano (`<`, `Hoje`, `>`) com cálculo dinâmico da matriz de dias do mês, incluindo preenchimento dos dias pertencentes ao mês anterior e posterior para renderização de grade consistente de 7 colunas (DOM a SÁB).
+2. **Parser Híbrido de Vencimentos (`extrairDiaDoVencimento`):**
+   - *Datas Recorrentes:* Interpreta padrões textuais comuns como `"Dia 10"`, `"Dia 08"`, `"15"`, replicando os compromissos em todos os meses selecionados.
+   - *Datas ISO 8601 e BR:* Interpreta `"AAAA-MM-DD"` e `"DD/MM/AAAA"`, vinculando obrigações exclusivamente ao ano e mês de ocorrência real.
+3. **Painel de KPIs Mensais:**
+   - **Total Previsto no Mês:** Soma total de todos os compromissos financeiros agendados para o mês em exibição.
+   - **Quitado / Pago:** Volume financeiro já liquidado com percentual de adimplemento sobre o total previsto.
+   - **Pendente a Vencer:** Montante em aberto aguardando liquidação.
+   - **Pico de Vencimentos:** Identificação automática do dia de maior pressão de caixa no mês.
+4. **Inspetor Interativo de Dia:** Ao clicar em qualquer data do mês, abre-se um painel de detalhes permitindo alternar status de pagamento (*pago / pendente*), deletar o item ou realizar o agendamento rápido de um novo lançamento diretamente naquela data.
+5. **Filtros por Pilar e Status:** Filtragem em tempo real por pilar orçamentário (`Todos`, `Fixas`, `Supérfluos`, `Investimentos`) e status de quitação (`Pendentes`, `Quitados`).
