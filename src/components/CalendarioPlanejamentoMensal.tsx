@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type { ItemLancamento, CategoriaOrcamentaria } from '../types/finance';
 import { formatarBRL, CATEGORIAS_CONFIG, parseMoedaBR } from '../utils/calculations';
 import { 
@@ -116,14 +116,29 @@ export const CalendarioPlanejamentoMensal = ({
   const [novoTipo, setNovoTipo] = useState('Moradia');
 
   const painelDiaRef = useRef<HTMLDivElement>(null);
+  const [modalDiaAberto, setModalDiaAberto] = useState(false);
 
   const ano = dataVisualizada.getFullYear();
   const mes = dataVisualizada.getMonth();
 
-  // Seleciona um dia e assegura visibilidade do painel no mobile
+  // Fecha o modal ao pressionar tecla Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && modalDiaAberto) {
+        setModalDiaAberto(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [modalDiaAberto]);
+
+  // Seleciona um dia: quando tiver despesa, abre imediatamente na tela o modal com as despesas
   const handleSelecionarDia = (dia: number) => {
     setDiaSelecionado(dia);
-    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+    const itens = mapaItensPorDia.get(dia) || [];
+    if (itens.length > 0) {
+      setModalDiaAberto(true);
+    } else if (typeof window !== 'undefined' && window.innerWidth < 768) {
       setTimeout(() => {
         painelDiaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }, 60);
@@ -363,12 +378,12 @@ export const CalendarioPlanejamentoMensal = ({
         </div>
 
         {/* 3. Filtros do Calendário */}
-        <div className="px-3 sm:px-6 py-2.5 sm:py-3 border-b border-[#3d3a39] bg-[#161413] flex items-center justify-start md:justify-between gap-2.5 sm:gap-3 text-xs font-mono overflow-x-auto no-scrollbar">
-          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            <span className="text-[10px] text-[#8a8380] uppercase mr-1 whitespace-nowrap">Filtrar:</span>
+        <div className="px-1.5 min-[380px]:px-2.5 sm:px-6 py-2 sm:py-3 border-b border-[#3d3a39] bg-[#161413] flex items-center justify-between sm:justify-start gap-1 sm:gap-2.5 text-[10px] min-[380px]:text-[11px] sm:text-xs font-mono select-none overflow-x-hidden sm:overflow-x-auto">
+          <div className="flex items-center gap-0.5 min-[380px]:gap-1 sm:gap-1.5 shrink-0">
+            <span className="text-[10px] text-[#8a8380] uppercase mr-1 whitespace-nowrap hidden sm:inline">Filtrar:</span>
             <button
               onClick={() => setFiltroPilar('todos')}
-              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
+              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroPilar === 'todos' 
                   ? 'bg-[#fafafa] text-[#101010] border-[#fafafa]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
@@ -378,7 +393,7 @@ export const CalendarioPlanejamentoMensal = ({
             </button>
             <button
               onClick={() => setFiltroPilar('fixas')}
-              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
+              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroPilar === 'fixas' 
                   ? 'bg-[#eeeeee] text-[#101010] border-[#eeeeee]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
@@ -388,17 +403,18 @@ export const CalendarioPlanejamentoMensal = ({
             </button>
             <button
               onClick={() => setFiltroPilar('superfluos')}
-              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
+              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroPilar === 'superfluos' 
                   ? 'bg-[#ee6018] text-[#101010] border-[#ee6018]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
               }`}
             >
-              SUPÉRFLUOS
+              <span className="hidden min-[380px]:inline">SUPÉRFLUOS</span>
+              <span className="min-[380px]:hidden">SUPÉRF.</span>
             </button>
             <button
               onClick={() => setFiltroPilar('investimentos')}
-              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
+              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroPilar === 'investimentos' 
                   ? 'bg-[#a0ca92] text-[#101010] border-[#a0ca92]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
@@ -409,12 +425,12 @@ export const CalendarioPlanejamentoMensal = ({
           </div>
 
           {/* Divisor vertical sutil entre pilares e status */}
-          <div className="h-4 w-px bg-[#3d3a39] shrink-0" />
+          <div className="h-3.5 sm:h-4 w-px bg-[#3d3a39] shrink-0 mx-0.5 sm:mx-1" />
 
-          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <div className="flex items-center gap-0.5 min-[380px]:gap-1 sm:gap-1.5 shrink-0">
             <button
               onClick={() => setFiltroStatus('todos')}
-              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
+              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroStatus === 'todos' 
                   ? 'bg-[#1d1a18] text-[#eeeeee] border-[#fafafa]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39]'
@@ -424,17 +440,18 @@ export const CalendarioPlanejamentoMensal = ({
             </button>
             <button
               onClick={() => setFiltroStatus('pendentes')}
-              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
+              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroStatus === 'pendentes' 
                   ? 'bg-[#ee6018]/10 text-[#ee6018] border-[#ee6018]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39]'
               }`}
             >
-              A PAGAR
+              <span className="hidden min-[380px]:inline">A PAGAR</span>
+              <span className="min-[380px]:hidden">PEND.</span>
             </button>
             <button
               onClick={() => setFiltroStatus('pagos')}
-              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
+              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroStatus === 'pagos' 
                   ? 'bg-[#a0ca92]/10 text-[#a0ca92] border-[#a0ca92]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39]'
@@ -610,6 +627,15 @@ export const CalendarioPlanejamentoMensal = ({
 
               {/* Botões de Ação do Dia */}
               <div className="flex flex-wrap items-center gap-2">
+                {/* Botão Abrir Modal na Tela */}
+                <button
+                  onClick={() => setModalDiaAberto(true)}
+                  className="px-2.5 py-1.5 rounded-[3px] bg-transparent hover:bg-[#1d1a18] border border-[#3d3a39] hover:border-[#fafafa] text-[#8a8380] hover:text-[#fafafa] font-mono text-xs uppercase tracking-tight flex items-center justify-center gap-1.5 cursor-pointer transition"
+                  title="Abrir detalhes deste dia em janela modal na tela"
+                >
+                  <span>Abrir na Tela</span>
+                </button>
+
                 {/* Botão Lembrar Dia no WhatsApp */}
                 {itensDoDiaSelecionado.some(it => !it.pago) && (
                   <button
@@ -825,6 +851,288 @@ export const CalendarioPlanejamentoMensal = ({
                 ))}
               </div>
             )}
+          </div>
+        )}
+        {/* 6. Modal On-Screen: Abre na tela ao clicar no dia com despesas */}
+        {modalDiaAberto && diaSelecionado && (
+          <div 
+            className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 select-none animate-fadeIn"
+            onClick={() => setModalDiaAberto(false)}
+          >
+            <div 
+              className="relative w-full max-w-lg bg-[#161413] border border-[#3d3a39] rounded-[10px] overflow-hidden shadow-2xl flex flex-col max-h-[88vh] text-[#eeeeee]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* macOS Window Terminal Header */}
+              <div className="h-10 bg-[#1d1a18] border-b border-[#3d3a39] px-4 flex items-center justify-between shrink-0 select-none">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#ee6018]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+                  <span className="font-mono text-xs uppercase tracking-wider text-[#8a8380] ml-2 truncate">
+                    CALENDÁRIO // DIA {diaSelecionado.toString().padStart(2, '0')} DE {MESES[mes].toUpperCase()}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setModalDiaAberto(false)}
+                  className="h-7 w-7 rounded-[3px] bg-transparent hover:bg-[#3d3a39]/50 text-[#8a8380] hover:text-[#fafafa] flex items-center justify-center cursor-pointer transition-colors"
+                  title="Fechar (Esc)"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Header com Totais e Métricas do Dia */}
+              <div className="p-4 sm:p-5 bg-[#101010] border-b border-[#3d3a39] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-[4px] bg-[#1d1a18] border border-[#3d3a39] flex items-center justify-center font-mono text-base font-bold text-[#fafafa] shrink-0">
+                    {diaSelecionado.toString().padStart(2, '0')}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs uppercase text-[#fafafa] font-medium">
+                        {diaSelecionado} de {MESES[mes]} de {ano}
+                      </span>
+                      {ehHoje(diaSelecionado) && (
+                        <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#ee6018] text-[#101010] font-bold">HOJE</span>
+                      )}
+                    </div>
+                    <div className="text-lg sm:text-xl font-normal text-[#eeeeee] tracking-tight font-geist mt-0.5">
+                      {formatarBRL(totalDiaSelecionado)}
+                    </div>
+                    <span className="text-[11px] font-mono text-[#8a8380]">
+                      {itensDoDiaSelecionado.length} {itensDoDiaSelecionado.length === 1 ? 'compromisso cadastrado' : 'compromissos cadastrados'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Botão Ação WhatsApp e Agendar */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {itensDoDiaSelecionado.some(it => !it.pago) && (
+                    <button
+                      onClick={() => {
+                        const msg = gerarMensagemWhatsAppDia(diaSelecionado, MESES[mes], itensDoDiaSelecionado);
+                        dispararWhatsApp(msg);
+                      }}
+                      className="h-8 px-2.5 rounded-[3px] bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/40 text-[#25D366] font-mono text-xs uppercase tracking-tight flex items-center gap-1.5 cursor-pointer transition"
+                      title="Lembrar pendências deste dia no WhatsApp"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setMostrandoAgendamento(!mostrandoAgendamento)}
+                    className="h-8 px-2.5 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] font-mono text-xs uppercase tracking-tight flex items-center gap-1.5 cursor-pointer transition font-medium"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Novo</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Formulário Inline se aberto */}
+              {mostrandoAgendamento && (
+                <form onSubmit={handleSalvarAgendamento} className="p-4 bg-[#161413] border-b border-[#3d3a39] flex flex-col gap-3 animate-fadeIn shrink-0">
+                  <div className="flex items-center justify-between border-b border-[#3d3a39] pb-2">
+                    <span className="font-mono text-xs uppercase text-[#eeeeee]">
+                      + NOVO COMPROMISSO PARA O DIA {diaSelecionado} DE {MESES[mes].toUpperCase()}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setMostrandoAgendamento(false)}
+                      className="text-[#8a8380] hover:text-[#eeeeee]"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="font-mono text-[10px] text-[#8a8380] block mb-1 uppercase">Descrição</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Conta de Luz, Mercado..."
+                        value={novoTitulo}
+                        onChange={(e) => setNovoTitulo(e.target.value)}
+                        className="w-full bg-[#101010] border border-[#3d3a39] rounded-[3px] px-2.5 py-1.5 text-xs text-[#eeeeee] focus:border-[#eeeeee] focus:outline-none font-mono"
+                        autoFocus
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-mono text-[10px] text-[#8a8380] block mb-1 uppercase">Valor (R$)</label>
+                      <input
+                        type="text"
+                        placeholder="0,00"
+                        value={novoValor}
+                        onChange={(e) => setNovoValor(e.target.value)}
+                        className="w-full bg-[#101010] border border-[#3d3a39] rounded-[3px] px-2.5 py-1.5 text-xs text-[#eeeeee] focus:border-[#eeeeee] focus:outline-none font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="font-mono text-[10px] text-[#8a8380] block mb-1 uppercase">Pilar 50-30-20</label>
+                      <select
+                        value={novaCategoria}
+                        onChange={(e) => {
+                          const cat = e.target.value as CategoriaOrcamentaria;
+                          setNovaCategoria(cat);
+                          setNovoTipo(CATEGORIAS_CONFIG[cat].subcategorias[0] || 'Geral');
+                        }}
+                        className="w-full bg-[#101010] border border-[#3d3a39] rounded-[3px] px-2 py-1.5 text-xs text-[#eeeeee] focus:border-[#eeeeee] focus:outline-none font-mono"
+                      >
+                        <option value="fixas">50% Fixas & Essenciais</option>
+                        <option value="superfluos">30% Estilo de Vida / Supérfluos</option>
+                        <option value="investimentos">20% Investimentos & Reserva</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="font-mono text-[10px] text-[#8a8380] block mb-1 uppercase">Subcategoria</label>
+                      <select
+                        value={novoTipo}
+                        onChange={(e) => setNovoTipo(e.target.value)}
+                        className="w-full bg-[#101010] border border-[#3d3a39] rounded-[3px] px-2 py-1.5 text-xs text-[#eeeeee] focus:border-[#eeeeee] focus:outline-none font-mono"
+                      >
+                        {CATEGORIAS_CONFIG[novaCategoria].subcategorias.map((sub) => (
+                          <option key={sub} value={sub}>{sub}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-[#3d3a39]">
+                    <button
+                      type="button"
+                      onClick={() => setMostrandoAgendamento(false)}
+                      className="px-3 py-1 rounded-[3px] bg-transparent border border-[#3d3a39] text-[#8a8380] hover:text-[#eeeeee] text-xs font-mono cursor-pointer"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-1 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] text-xs font-mono font-medium uppercase cursor-pointer"
+                    >
+                      Confirmar
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Lista com as Despesas Cadastradas */}
+              <div className="p-4 sm:p-5 overflow-y-auto flex-1 flex flex-col gap-2.5 select-text">
+                <span className="font-mono text-[10px] text-[#8a8380] uppercase tracking-wider block mb-1">
+                  Despesas e compromissos deste dia:
+                </span>
+
+                {itensDoDiaSelecionado.length === 0 ? (
+                  <div className="p-8 text-center rounded-[3px] border border-dashed border-[#3d3a39] text-[#8a8380] font-mono text-xs flex flex-col items-center gap-2">
+                    <CalendarCheck2 className="w-6 h-6 text-[#8a8380]" />
+                    <span>Nenhum compromisso financeiro agendado para o dia {diaSelecionado}.</span>
+                    <button
+                      onClick={() => setMostrandoAgendamento(true)}
+                      className="mt-1 text-xs text-[#fafafa] hover:underline cursor-pointer"
+                    >
+                      + Agendar despesa ou aporte neste dia
+                    </button>
+                  </div>
+                ) : (
+                  itensDoDiaSelecionado.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-3.5 rounded-[4px] bg-[#101010] border border-[#3d3a39] hover:border-[#8a8380] transition flex flex-col justify-between gap-3 font-mono"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="overflow-hidden flex-1">
+                          <span className={`text-sm block font-medium truncate ${
+                            item.pago ? 'line-through text-[#8a8380]' : 'text-[#fafafa]'
+                          }`}>
+                            {item.titulo}
+                          </span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded uppercase border ${
+                              item.categoria === 'fixas'
+                                ? 'text-[#eeeeee] border-[#3d3a39]'
+                                : item.categoria === 'superfluos'
+                                ? 'text-[#ee6018] border-[#ee6018]/40 bg-[#ee6018]/10'
+                                : 'text-[#a0ca92] border-[#a0ca92]/40 bg-[#a0ca92]/10'
+                            }`}>
+                              {CATEGORIAS_CONFIG[item.categoria].nome}
+                            </span>
+                            <span className="text-[11px] text-[#8a8380] truncate">{item.tipoDetalhado}</span>
+                          </div>
+                        </div>
+
+                        <span className="text-base font-medium text-[#fafafa] shrink-0">
+                          {formatarBRL(item.valor)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2.5 border-t border-[#1d1a18] text-xs">
+                        {/* Alternar Pago/Pendente */}
+                        <button
+                          onClick={() => onAlternarPago(item.id)}
+                          className={`px-2.5 py-1 rounded-[3px] border text-[11px] font-mono uppercase tracking-tight flex items-center gap-1.5 cursor-pointer transition ${
+                            item.pago
+                              ? 'bg-[#a0ca92]/15 text-[#a0ca92] border-[#a0ca92]/50 hover:bg-[#a0ca92]/25'
+                              : 'bg-[#ee6018]/15 text-[#ee6018] border-[#ee6018]/50 hover:bg-[#ee6018]/25'
+                          }`}
+                        >
+                          {item.pago ? (
+                            <>
+                              <Check className="w-3.5 h-3.5" /> PAGO
+                            </>
+                          ) : (
+                            <>
+                              <Clock className="w-3.5 h-3.5" /> A PAGAR
+                            </>
+                          )}
+                        </button>
+
+                        <div className="flex items-center gap-2">
+                          {!item.pago && (
+                            <button
+                              onClick={() => {
+                                const msg = gerarMensagemWhatsAppIndividual(item);
+                                dispararWhatsApp(msg);
+                              }}
+                              className="p-1.5 text-[#8a8380] hover:text-[#25D366] transition cursor-pointer"
+                              title="Lembrar no WhatsApp"
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => {
+                              if (window.confirm(`Excluir "${item.titulo}"?`)) {
+                                onRemoverItem(item.id);
+                              }
+                            }}
+                            className="p-1.5 text-[#8a8380] hover:text-[#ee6018] transition cursor-pointer"
+                            title="Remover lançamento"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-3 bg-[#1d1a18] border-t border-[#3d3a39] flex items-center justify-end shrink-0">
+                <button
+                  onClick={() => setModalDiaAberto(false)}
+                  className="px-4 py-1.5 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#fafafa] text-[#8a8380] hover:text-[#fafafa] font-mono text-xs uppercase tracking-tight cursor-pointer transition-colors"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

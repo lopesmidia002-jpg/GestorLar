@@ -98,7 +98,7 @@ export const HeaderMotorRenda = ({
   return (
     <header className="w-full flex flex-col gap-10 pt-2 pb-4">
       {/* Top Navigation Bar: Factory Persistent Header (~64px height, #101010 transparent, minimal 3px radius) */}
-      <nav className="h-16 w-full flex items-center justify-between border-b border-[#3d3a39] px-1 sm:px-2">
+      <nav className="min-h-[56px] py-2 sm:py-2.5 w-full flex items-center justify-between border-b border-[#3d3a39] px-1 sm:px-2">
         {/* Left: Wordmark 'FACTORY' in Geist Mono uppercase with live signal dot */}
         <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           <div className="flex items-center gap-1.5 sm:gap-2.5">
@@ -113,21 +113,21 @@ export const HeaderMotorRenda = ({
           </div>
         </div>
 
-        {/* Center / Section Links: Geist 14px 400 uppercase */}
-        <div className="hidden lg:flex items-center gap-8 text-[13px] font-normal uppercase tracking-tight text-[#8a8380]">
-          <a href="#war-room" className="text-[#eeeeee] hover:text-[#fafafa] transition-colors">
+        {/* Center / Section Links: Geist 14px 400 uppercase - visível apenas em telas amplas (2xl) com espaço livre */}
+        <div className="hidden 2xl:flex items-center gap-8 text-[13px] font-normal uppercase tracking-tight text-[#8a8380] whitespace-nowrap shrink-0">
+          <a href="#war-room" className="text-[#eeeeee] hover:text-[#fafafa] transition-colors whitespace-nowrap">
             War Room
           </a>
-          <a href="#pilares" className="hover:text-[#eeeeee] transition-colors">
+          <a href="#pilares" className="hover:text-[#eeeeee] transition-colors whitespace-nowrap">
             Pilares 50-30-20
           </a>
-          <a href="#calendario" className="hover:text-[#eeeeee] transition-colors">
+          <a href="#calendario" className="hover:text-[#eeeeee] transition-colors whitespace-nowrap">
             Calendário
           </a>
-          <a href="#ledger" className="hover:text-[#eeeeee] transition-colors">
+          <a href="#ledger" className="hover:text-[#eeeeee] transition-colors whitespace-nowrap">
             Ledger
           </a>
-          <span className="text-[11px] font-mono text-[#4d4947] tracking-widest">
+          <span className="text-[11px] font-mono text-[#4d4947] tracking-widest whitespace-nowrap">
             LATENCY: 0MS LOCAL
           </span>
         </div>
@@ -406,14 +406,14 @@ export const HeaderMotorRenda = ({
                 />
                 <button 
                   onClick={handleSalvarTotalGastos} 
-                  className="w-5 h-5 flex items-center justify-center bg-[#101010] text-[#fafafa] rounded-[2px] cursor-pointer hover:bg-[#252220]"
+                  className="w-5 h-5 shrink-0 flex items-center justify-center bg-[#101010] text-[#fafafa] rounded-[2px] cursor-pointer hover:bg-[#252220]"
                   title="Confirmar"
                 >
                   <Check className="w-3 h-3 stroke-[2.5]" />
                 </button>
                 <button 
                   onClick={() => setEditandoTotalGastos(false)} 
-                  className="w-5 h-5 flex items-center justify-center bg-[#d8d3d0] text-[#101010] rounded-[2px] cursor-pointer hover:bg-[#c2bcb8]"
+                  className="w-5 h-5 shrink-0 flex items-center justify-center bg-[#d8d3d0] text-[#101010] rounded-[2px] cursor-pointer hover:bg-[#c2bcb8]"
                   title="Cancelar"
                 >
                   <X className="w-3 h-3 stroke-[2.5]" />

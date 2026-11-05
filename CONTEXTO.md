@@ -49,7 +49,7 @@ pie title Distribuição Orçamentária Familiar
 - **Gráficos Vivos a 60 FPS:** Renderização contínua orientada a equações senoidais e harmônicas em SVG sem bibliotecas pesadas de animação externa, estilizados em traços vetoriais matemáticos nítidos sem desfoque.
 - **Enquadramento e Alinhamento Técnico Estrito:** Todos os instrumentos contam com rodapés e badges protegidos por `shrink-0` e dimensões invariantes, prevenindo colisão ou corte visual nas bordas dos painéis.
 - **Botões de Confirmação e Ação Inline:** Os botões de confirmação (`Check`) e cancelamento (`X`) nas edições rápidas de renda e saldo livre mantêm proporção quadrada `38px x 38px` simétrica e alinhada à altura dos inputs, eliminando achatamentos visuais.
-- **Barra Superior com Todos os Itens Visíveis:** A barra de navegação principal (`HeaderMotorRenda`) distribui os 5 comandos operacionais (`Sync`, `Notificações`, `WhatsApp`, `Zerar` e `Nuvem`) com espaçamentos fluidos e `shrink-0`, assegurando que todos os itens permaneçam inteiramente visíveis sem transbordar a tela em smartphones.
+- **Barra Superior com Todos os Itens Visíveis e Borda Limpa:** A barra de navegação principal (`HeaderMotorRenda`) distribui os 5 comandos operacionais (`Sync`, `Notificações`, `WhatsApp`, `Zerar` e `Nuvem`) com espaçamentos fluidos, `shrink-0` e dimensionamento `min-h-[56px] py-2 sm:py-2.5`, garantindo que todos os itens permaneçam inteiramente visíveis sem transbordar em smartphones e que a borda inferior hairline de 1px fique rigorosamente posicionada abaixo de todos os ícones e botões, sem cortes no centro dos elementos.
 - **Offline Total e Autonomia:** O usuário pode gerenciar receitas, contas e despesas no metrô, avião ou locais sem sinal. As informações persistem de modo atômico e sincronizam em segundo plano ao reconectar.
 
 ---
@@ -92,8 +92,8 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
 - **Inteligência de Vencimento e Proteção de Dados Indefinidos:** Suporte a vencimentos fixos recorrentes (ex: *"Dia 10"*) e datas fechadas (`YYYY-MM-DD` ou `DD/MM/YYYY`). Lançamentos marcados como `'A definir'` ou sem dia explícito são preservados no orçamento e ledger, mas não poluem as células do calendário.
 - **Métricas Chave de Caixa:** Monitoramento de Previsto vs. Quitado, saldo em aberto e identificação automática do dia com pico de vencimentos.
 - **Agendamento Direto no Dia:** Abertura de gaveta de detalhes da data ao clicar em qualquer dia, permitindo marcar obrigações como pagas, remover lançamentos e agendar novas despesas/investimentos diretamente no dia selecionado.
-- **Filtros Lado a Lado no Mobile:** Exibição horizontal unificada (`overflow-x-auto no-scrollbar`) dos filtros de pilares e status no calendário e ledger, mantendo os seletores lado a lado sem quebras de linha em smartphones.
-- **Grid Mobile Limpo e Detalhes no Clique:** No mobile, as células diárias do calendário ocultam as pílulas de texto e valores que ficavam comprimidos no grid, exibindo apenas micro-dots cromáticos minimalistas quando há compromissos; ao tocar em qualquer dia, o painel inferior de detalhes abre imediatamente na tela com a lista completa de despesas, valores, categorias e ações daquele dia.
+- **Filtros 100% Visíveis no Mobile Sem Cortes:** Disposição compacta e precisa dos 7 botões de filtro de pilar e status no calendário, garantindo que `TODOS`, `FIXAS`, `SUPÉRFLUOS`, `APORTES`, `TUDO`, `A PAGAR` e `PAGO` permaneçam todos visíveis na tela ao mesmo tempo em smartphones, sem corte do botão final e sem exigir rolagem horizontal.
+- **Grid Mobile Limpo e Modal On-Screen no Clique:** As células diárias do calendário no mobile operam limpas exibindo micro-dots quando há lançamentos. Ao tocar em qualquer data que possua compromissos, uma janela modal no centro da tela abre instantaneamente apresentando o dia selecionado, o montante total e a lista detalhada de despesas com botões de alternância de pagamento e lembretes.
 
 ---
 

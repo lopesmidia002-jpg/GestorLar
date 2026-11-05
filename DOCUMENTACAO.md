@@ -256,11 +256,11 @@ O componente `CalendarioPlanejamentoMensal` implementa uma visão temporal do fl
    - **Quitado / Pago:** Volume financeiro já liquidado com percentual de adimplemento sobre o total previsto.
    - **Pendente a Vencer:** Montante em aberto aguardando liquidação.
    - **Pico de Vencimentos:** Identificação automática do dia de maior pressão de caixa no mês.
-4. **Inspetor Interativo de Dia:** Ao clicar em qualquer data do mês, abre-se um painel de detalhes permitindo alternar status de pagamento (*pago / pendente*), deletar o item ou realizar o agendamento rápido de um novo lançamento diretamente naquela data.
-5. **Filtros por Pilar e Status Lado a Lado no Mobile (`no-scrollbar`):** Barra horizontal unificada sem quebra de linha (`flex-nowrap`, `overflow-x-auto no-scrollbar`), com separador sutil entre os pilares 50-30-20 e o status de quitação (Tudo, A Pagar, Pago), mantendo os botões de filtro sempre alinhados lado a lado com rolagem tátil suave em smartphones e distribuição responsiva em desktop.
+4. **Inspetor Interativo e Modal On-Screen do Dia:** Ao clicar em qualquer data que possua compromissos cadastrados (ou no botão *Abrir na Tela*), abre-se imediatamente uma janela modal no centro da tela (`ModalDespesasDia`) com o resumo financeiro daquela data, lista completa dos lançamentos, alternância de status de pagamento (*pago / pendente*), botão de envio de lembrete WhatsApp individual ou consolidado, exclusão com 1 clique e formulário rápido de novos agendamentos.
+5. **Filtros por Pilar e Status 100% Visíveis no Mobile Sem Cortes:** Barra horizontal otimizada onde todos os 7 seletores operacionais (`TODOS`, `FIXAS`, `SUPÉRFLUOS`, `APORTES`, `TUDO`, `A PAGAR`, `PAGO`) aparecem simultaneamente na tela do smartphone sem cortes e sem necessidade de rolagem horizontal, utilizando paddings compactos (`px-1.5 min-[380px]:px-2`), omissão da legenda textual redundante em telas móveis e rótulos responsivos adaptativos para larguras ultra-estreitas.
 6. **Ergonomia e Visibilidade Sob Demanda no Mobile:**
    - *Ocultação de Despesas no Grid Mobile:* Em telas móveis (`sm:hidden`), as células do calendário deixam de exibir pílulas de texto e valores que ficavam comprimidos e ilegíveis nas colunas estreitas de ~45px, substituindo-os por micro-dots cromáticos minimalistas indicando a existência de despesas cadastradas (verde para pago, laranja para supérfluo/pendente e branco para fixas).
-   - *Exibição Imediata das Despesas ao Clicar no Dia:* Ao tocar em qualquer dia da grade, a célula recebe anel de destaque e o painel detalhado logo abaixo exibe instantaneamente todas as despesas cadastradas para aquela data com seus valores integrais, categorias, botões de quitação e lembrete WhatsApp, rolando suavemente para a área de detalhes em smartphones.
+   - *Abertura Imediata na Tela ao Clicar no Dia:* Ao tocar em qualquer dia com despesas, a célula recebe anel de destaque e o modal com a pauta completa de lançamentos daquela data surge imediatamente na tela, permitindo gerenciar tudo sem necessidade de rolagem ou esforço visual.
 
 ---
 
@@ -334,3 +334,24 @@ Para assegurar que cada usuário do aplicativo gerencie seu próprio orçamento 
    - Fixação de `shrink-0` nos botões de edição inline (`Edit2`) para evitar compressão contra o texto monetário.
 4. **Alinhamento Harmônico nos Demais Cards (`HyperRadarCard` e `HyperStarburstCard`):**
    - Padronização idêntica de contenção, `min-w-0` e tipografia adaptativa em todos os cards da suíte vetorial do War Room.
+
+---
+
+## 14. Correção Estrutural da Barra Superior e Normalização de Espaçamentos Tailwind v4
+
+### 14.1 Diagnóstico de Causa Raiz no Motor Tailwind CSS v4 (`src/index.css`)
+1. **Colisão de Multiplicadores do `@theme`:** A introdução acidental de propriedades `--spacing-8: 8px;`, `--spacing-16: 16px;`, `--spacing-24: 24px;` no bloco `@theme` alterou o comportamento interno do motor do Tailwind v4:
+   - Em Tailwind v4, definir `--spacing-16: 16px` sobrescreve o valor do utilitário `h-16` / `w-16` (que originalmente representaria `4rem` / `64px`) para um valor fixo de apenas `16px`.
+   - Similarmente, `--spacing-8: 8px` colapsava qualquer utilitário `h-8` para meros 8px, causando deformação achatada nos botões de confirmação e cancelamento inline.
+2. **Sintoma da Linha Atravessando Ícones e Comandos:**
+   - Com `<nav className="h-16 ... border-b border-[#3d3a39]">`, o container da barra de navegação superior foi forçado a uma altura estática de apenas 16px.
+   - Como os botões internos de ação (`Sync`, `WhatsApp`, `Zerar`, `Nuvem`, `Sair`) medem 34px de altura (`h-[34px]`), a linha de borda inferior (`border-b`), fixada na coordenada Y de 16px a partir do topo, cortava horizontalmente o centro de todos os botões e ícones.
+
+### 14.2 Resolução e Blindagem Arquitetural
+1. **Expurgo de Tokens de Espaçamento Conflitantes:** Remoção completa das declarações arbitrárias de `--spacing-*` do `@theme` em `src/index.css`, restabelecendo a escala proporcional nativa do Tailwind.
+2. **Contenção Flexível Adaptativa (`HeaderMotorRenda.tsx`):**
+   - Substituição da classe rígida `h-16` por `min-h-[56px] py-2 sm:py-2.5`.
+   - Garantia matemática de que a altura da barra sempre acomoda os 34px dos botões com no mínimo 8px de respiro acima e abaixo, posicionando a linha de borda `border-b` estritamente no rodapé da barra, abaixo de qualquer elemento visual.
+3. **Normalização Simétrica dos Botões Inline:**
+   - Botões de confirmação (`Check`) e cancelamento (`X`) configurados com dimensões fixas de `h-[38px] w-[38px] shrink-0` e alinhamento centralizado com cursores e estados interativos consistentes.
+   - Prevenção de quebra de linhas nas seções de navegação em telas intermediárias com `hidden 2xl:flex` e `whitespace-nowrap`.
