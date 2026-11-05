@@ -93,7 +93,7 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
 - **Métricas Chave de Caixa:** Monitoramento de Previsto vs. Quitado, saldo em aberto e identificação automática do dia com pico de vencimentos.
 - **Agendamento Direto no Dia:** Abertura de gaveta de detalhes da data ao clicar em qualquer dia, permitindo marcar obrigações como pagas, remover lançamentos e agendar novas despesas/investimentos diretamente no dia selecionado.
 - **Filtros Lado a Lado no Mobile:** Exibição horizontal unificada (`overflow-x-auto no-scrollbar`) dos filtros de pilares e status no calendário e ledger, mantendo os seletores lado a lado sem quebras de linha em smartphones.
-- **Visualização Otimizada dos Itens no Grid Mobile:** Nas células diárias do calendário em smartphones, os itens utilizam micro-dots coloridos de status e títulos expandidos, eliminando truncamentos severos de 1 letra (`R..`, `A..`) e formatando totais monetários de forma compacta e sem cortes de dígitos.
+- **Grid Mobile Limpo e Detalhes no Clique:** No mobile, as células diárias do calendário ocultam as pílulas de texto e valores que ficavam comprimidos no grid, exibindo apenas micro-dots cromáticos minimalistas quando há compromissos; ao tocar em qualquer dia, o painel inferior de detalhes abre imediatamente na tela com a lista completa de despesas, valores, categorias e ações daquele dia.
 
 ---
 

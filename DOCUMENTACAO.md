@@ -258,10 +258,9 @@ O componente `CalendarioPlanejamentoMensal` implementa uma visão temporal do fl
    - **Pico de Vencimentos:** Identificação automática do dia de maior pressão de caixa no mês.
 4. **Inspetor Interativo de Dia:** Ao clicar em qualquer data do mês, abre-se um painel de detalhes permitindo alternar status de pagamento (*pago / pendente*), deletar o item ou realizar o agendamento rápido de um novo lançamento diretamente naquela data.
 5. **Filtros por Pilar e Status Lado a Lado no Mobile (`no-scrollbar`):** Barra horizontal unificada sem quebra de linha (`flex-nowrap`, `overflow-x-auto no-scrollbar`), com separador sutil entre os pilares 50-30-20 e o status de quitação (Tudo, A Pagar, Pago), mantendo os botões de filtro sempre alinhados lado a lado com rolagem tátil suave em smartphones e distribuição responsiva em desktop.
-6. **Ergonomia e Legibilidade dos Lançamentos no Grid Mobile:**
-   - *Micro-Indicadores de Status (Dots):* Substituição dos ícones volumosos nas mini-pílulas diárias por micro-esferas de 6px (verde para pago, laranja para pendente/supérfluos e branco para fixas), concedendo largura total para a visualização dos nomes das despesas e eliminando abreviações ilegíveis de uma letra.
-   - *Valores Totais Compactos (`formatarTotalDiaCompacto`):* Omissão inteligente de centavos para valores redondos no mobile (ex: `R$ 1.450` em vez de `R$ 1.450,00`), impedindo cortes de dígitos na borda direita das células.
-   - *Otimização de Espaço Útil (+40%):* Redução de paddings do grid (`p-2 sm:p-4`) e das células (`p-1 sm:p-1.5`), maximizando a área de leitura em smartphones.
+6. **Ergonomia e Visibilidade Sob Demanda no Mobile:**
+   - *Ocultação de Despesas no Grid Mobile:* Em telas móveis (`sm:hidden`), as células do calendário deixam de exibir pílulas de texto e valores que ficavam comprimidos e ilegíveis nas colunas estreitas de ~45px, substituindo-os por micro-dots cromáticos minimalistas indicando a existência de despesas cadastradas (verde para pago, laranja para supérfluo/pendente e branco para fixas).
+   - *Exibição Imediata das Despesas ao Clicar no Dia:* Ao tocar em qualquer dia da grade, a célula recebe anel de destaque e o painel detalhado logo abaixo exibe instantaneamente todas as despesas cadastradas para aquela data com seus valores integrais, categorias, botões de quitação e lembrete WhatsApp, rolando suavemente para a área de detalhes em smartphones.
 
 ---
 

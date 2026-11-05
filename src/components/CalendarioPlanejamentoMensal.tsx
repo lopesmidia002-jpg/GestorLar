@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import type { ItemLancamento, CategoriaOrcamentaria } from '../types/finance';
 import { formatarBRL, CATEGORIAS_CONFIG, parseMoedaBR } from '../utils/calculations';
 import { 
@@ -95,17 +95,6 @@ function extrairDiaDoVencimento(vencimento: string, ano: number, mes: number): n
   return null;
 }
 
-/**
- * Formata valores para caberem perfeitamente nas células estreitas do grid mobile sem cortar dígitos
- */
-function formatarTotalDiaCompacto(valor: number): string {
-  if (valor <= 0) return '';
-  if (valor % 1 === 0) {
-    return `R$ ${Math.round(valor).toLocaleString('pt-BR')}`;
-  }
-  return `R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
 export const CalendarioPlanejamentoMensal = ({
   itens,
   rendaFamiliar,
@@ -126,8 +115,20 @@ export const CalendarioPlanejamentoMensal = ({
   const [novaCategoria, setNovaCategoria] = useState<CategoriaOrcamentaria>('fixas');
   const [novoTipo, setNovoTipo] = useState('Moradia');
 
+  const painelDiaRef = useRef<HTMLDivElement>(null);
+
   const ano = dataVisualizada.getFullYear();
   const mes = dataVisualizada.getMonth();
+
+  // Seleciona um dia e assegura visibilidade do painel no mobile
+  const handleSelecionarDia = (dia: number) => {
+    setDiaSelecionado(dia);
+    if (typeof window !== 'undefined' && window.innerWidth < 768) {
+      setTimeout(() => {
+        painelDiaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 60);
+    }
+  };
 
   // Dias do mês e offset do primeiro dia da semana
   const totalDiasNoMes = new Date(ano, mes + 1, 0).getDate();
@@ -461,7 +462,7 @@ export const CalendarioPlanejamentoMensal = ({
             {Array.from({ length: primeiroDiaSemana }).map((_, idx) => (
               <div 
                 key={`vazio_${idx}`} 
-                className="min-h-[74px] sm:min-h-[84px] md:min-h-[94px] rounded-[3px] bg-[#161413]/30 border border-transparent p-1 opacity-25 select-none"
+                className="min-h-[46px] sm:min-h-[84px] md:min-h-[94px] rounded-[3px] bg-[#161413]/30 border border-transparent p-1 opacity-25 select-none"
               />
             ))}
 
@@ -476,10 +477,10 @@ export const CalendarioPlanejamentoMensal = ({
               return (
                 <div
                   key={`dia_${dia}`}
-                  onClick={() => setDiaSelecionado(dia)}
-                  className={`min-h-[74px] sm:min-h-[84px] md:min-h-[94px] rounded-[3px] p-1 sm:p-1.5 md:p-2 border transition-all cursor-pointer flex flex-col justify-between group overflow-hidden ${
+                  onClick={() => handleSelecionarDia(dia)}
+                  className={`min-h-[46px] sm:min-h-[84px] md:min-h-[94px] rounded-[3px] p-1 sm:p-1.5 md:p-2 border transition-all cursor-pointer flex flex-col justify-between group overflow-hidden ${
                     selecionado
-                      ? 'bg-[#1d1a18] border-[#fafafa] ring-1 ring-[#fafafa]/20'
+                      ? 'bg-[#1d1a18] border-[#fafafa] ring-1 ring-[#fafafa]/40'
                       : ehDiaAtual
                       ? 'bg-[#161413] border-[#ee6018]/60 hover:border-[#ee6018]'
                       : 'bg-[#161413] border-[#3d3a39] hover:border-[#8a8380]'
@@ -498,12 +499,35 @@ export const CalendarioPlanejamentoMensal = ({
                     )}
 
                     {totalDia > 0 && !ehDiaAtual && (
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#8a8380] opacity-50" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#8a8380] opacity-50 hidden sm:block" />
                     )}
                   </div>
 
-                  {/* Meio: Mini Pílulas de Lançamentos com Micro-Dot e Título Expandido */}
-                  <div className="flex flex-col gap-0.5 sm:gap-1 my-0.5 overflow-hidden">
+                  {/* Indicador Mobile: micro-dots elegantes quando o dia possui lançamentos (sem poluir a célula) */}
+                  <div className="flex sm:hidden items-center justify-center gap-1 mt-auto pb-0.5">
+                    {itensDoDia.length > 0 && (
+                      <div className="flex items-center gap-0.5">
+                        {itensDoDia.slice(0, 3).map((it, i) => (
+                          <span
+                            key={i}
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              it.pago
+                                ? 'bg-[#a0ca92]'
+                                : it.categoria === 'superfluos'
+                                ? 'bg-[#ee6018]'
+                                : 'bg-[#eeeeee]'
+                            }`}
+                          />
+                        ))}
+                        {itensDoDia.length > 3 && (
+                          <span className="w-1 h-1 rounded-full bg-[#8a8380]" />
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Meio: Mini Pílulas de Lançamentos com Micro-Dot e Título Expandido (Oculto no mobile, visível no desktop) */}
+                  <div className="hidden sm:flex flex-col gap-0.5 sm:gap-1 my-0.5 overflow-hidden">
                     {itensDoDia.slice(0, 2).map((it) => (
                       <div
                         key={it.id}
@@ -544,12 +568,11 @@ export const CalendarioPlanejamentoMensal = ({
                     )}
                   </div>
 
-                  {/* Rodapé da Célula: Valor Total do Dia Compacto e Sem Cortes */}
-                  <div className="text-right mt-auto pt-0.5">
+                  {/* Rodapé da Célula: Valor Total do Dia Compacto (Oculto no mobile, visível no desktop) */}
+                  <div className="hidden sm:block text-right mt-auto pt-0.5">
                     {totalDia > 0 ? (
                       <span className="font-mono text-[8.5px] sm:text-[9.5px] md:text-[11px] text-[#eeeeee] block tracking-tighter truncate font-medium">
-                        <span className="sm:hidden">{formatarTotalDiaCompacto(totalDia)}</span>
-                        <span className="hidden sm:inline">{formatarBRL(totalDia)}</span>
+                        {formatarBRL(totalDia)}
                       </span>
                     ) : (
                       <span className="text-[8.5px] text-transparent font-mono block select-none">-</span>
@@ -563,7 +586,10 @@ export const CalendarioPlanejamentoMensal = ({
 
         {/* 5. Painel Detalhado do Dia Selecionado */}
         {diaSelecionado && (
-          <div className="border-t border-[#3d3a39] bg-[#161413] p-4 md:p-6 flex flex-col gap-4">
+          <div 
+            ref={painelDiaRef}
+            className="border-t border-[#3d3a39] bg-[#161413] p-4 md:p-6 flex flex-col gap-4 animate-fadeIn scroll-mt-6"
+          >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#3d3a39] pb-3">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-[3px] bg-[#1d1a18] border border-[#3d3a39] flex items-center justify-center font-mono text-sm font-bold text-[#fafafa]">
