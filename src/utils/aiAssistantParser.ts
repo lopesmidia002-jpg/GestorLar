@@ -452,6 +452,10 @@ export function extrairTituloLimpo(texto: string, subcategoriaPadrao: string): s
     limpo = limpo.replace(regExt, ' ');
   }
 
+  // Remove menções explícitas a dia de vencimento para não contaminar o título
+  limpo = limpo.replace(/\b(?:vence\s*(?:no\s*)?|vencimento\s*(?:no\s*|para\s*|pra\s*|pro\s*)?|para\s*o\s*|pra\s*o\s*|pro\s*|no\s*)?dia\s*0?([1-9]|[12]\d|3[01])\b/gi, ' ');
+  limpo = limpo.replace(/\bdia\b/gi, ' ');
+
   // Remove stopwords conversacionais e nomes de pilares
   for (const sw of STOPWORDS_LANCAMENTO) {
     const reg = new RegExp(`\\b${sw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
@@ -474,6 +478,81 @@ export function extrairTituloLimpo(texto: string, subcategoriaPadrao: string): s
   }
 
   return 'Despesa';
+}
+
+// =========================================================================
+// 4.1 EXTRAÇÃO E HIGIENIZAÇÃO DE VENCIMENTO FALADO
+// =========================================================================
+
+export const MAPA_DIAS_EXTENSO: Record<string, number> = {
+  'primeiro': 1, 'um': 1, 'dois': 2, 'três': 3, 'tres': 3, 'quatro': 4, 'cinco': 5,
+  'seis': 6, 'sete': 7, 'oito': 8, 'nove': 9, 'dez': 10, 'onze': 11, 'doze': 12,
+  'treze': 13, 'quatorze': 14, 'catorze': 14, 'quinze': 15, 'dezesseis': 16,
+  'dezessete': 17, 'dezoito': 18, 'dezenove': 19, 'vinte': 20, 'vinte e um': 21,
+  'vinte e dois': 22, 'vinte e três': 23, 'vinte e tres': 23, 'vinte e quatro': 24,
+  'vinte e cinco': 25, 'vinte e seis': 26, 'vinte e sete': 27, 'vinte e oito': 28,
+  'vinte e nove': 29, 'trinta': 30, 'trinta e um': 31,
+};
+
+export function extrairVencimentoFalado(texto: string): {
+  vencimento: string;
+  textoSemVencimento: string;
+  diaDetectado: number | null;
+} {
+  const t = texto.toLowerCase();
+
+  // 1. Padrão explícito com dígitos: "dia 10", "pro dia 10", "pra o dia 5", "vence dia 8", "no dia 15"
+  const regexDiaDigitos = /\b(?:vence\s*(?:no\s*)?|vencimento\s*(?:no\s*|para\s*|pra\s*|pro\s*)?|para\s*o\s*|pra\s*o\s*|pro\s*|no\s*)?dia\s*0?([1-9]|[12]\d|3[01])\b/i;
+  const matchDigitos = t.match(regexDiaDigitos);
+  if (matchDigitos) {
+    const diaNum = parseInt(matchDigitos[1], 10);
+    const vencimentoFormatado = `Dia ${diaNum.toString().padStart(2, '0')}`;
+    const textoLimpo = texto.replace(matchDigitos[0], ' ');
+    return {
+      vencimento: vencimentoFormatado,
+      textoSemVencimento: textoLimpo,
+      diaDetectado: diaNum,
+    };
+  }
+
+  // 2. Padrão com números por extenso: "dia dez", "dia quinze", "pro dia vinte e cinco", etc.
+  for (const [extenso, diaNum] of Object.entries(MAPA_DIAS_EXTENSO)) {
+    const regexExtenso = new RegExp(`\\b(?:vence\\s*(?:no\s*)?|vencimento\\s*(?:no\s*|para\s*|pra\s*|pro\s*)?|para\\s*o\\s*|pra\\s*o\\s*|pro\s*|no\\s*)?dia\\s+${extenso}\\b`, 'i');
+    const matchExt = t.match(regexExtenso);
+    if (matchExt) {
+      const vencimentoFormatado = `Dia ${diaNum.toString().padStart(2, '0')}`;
+      const textoLimpo = texto.replace(matchExt[0], ' ');
+      return {
+        vencimento: vencimentoFormatado,
+        textoSemVencimento: textoLimpo,
+        diaDetectado: diaNum,
+      };
+    }
+  }
+
+  // 3. Padrão de data completa DD/MM ou DD/MM/AAAA (ex: "15/11", "20/12/2026")
+  const regexDataBR = /\b(0?[1-9]|[12]\d|3[01])\/(0?[1-9]|1[0-2])(?:\/(\d{2,4}))?\b/;
+  const matchData = t.match(regexDataBR);
+  if (matchData) {
+    const diaNum = parseInt(matchData[1], 10);
+    const mesNum = parseInt(matchData[2], 10);
+    const anoAtual = new Date().getFullYear();
+    const anoNum = matchData[3] ? (matchData[3].length === 2 ? 2000 + parseInt(matchData[3], 10) : parseInt(matchData[3], 10)) : anoAtual;
+    const formatada = `${diaNum.toString().padStart(2, '0')}/${mesNum.toString().padStart(2, '0')}/${anoNum}`;
+    const textoLimpo = texto.replace(matchData[0], ' ');
+    return {
+      vencimento: formatada,
+      textoSemVencimento: textoLimpo,
+      diaDetectado: diaNum,
+    };
+  }
+
+  // 4. Se o usuário NÃO falou nenhum dia, retorna "A definir" e diaDetectado = null (Não agenda no calendário)
+  return {
+    vencimento: 'A definir',
+    textoSemVencimento: texto,
+    diaDetectado: null,
+  };
 }
 
 // =========================================================================
@@ -915,20 +994,31 @@ Entendo qualquer comando em linguagem natural por texto ou voz! Exemplos que voc
     .map((p) => p.trim())
     .filter((p) => p.length > 0);
 
-  const itensAdicionados: Array<{ titulo: string; valor: number; categoria: string; pilar: string }> = [];
+  const itensAdicionados: Array<{ 
+    titulo: string; 
+    valor: number; 
+    categoria: string; 
+    pilar: string;
+    vencimento: string;
+    agendadoNoCalendario: boolean;
+  }> = [];
 
   for (const parte of partes) {
-    const valor = normalizarValorMonetario(parte);
+    // 1. Extrai o vencimento falado SE e SOMENTE SE o usuário mencionou um dia explicitamente no áudio/texto
+    const { vencimento, textoSemVencimento, diaDetectado } = extrairVencimentoFalado(parte);
+
+    // 2. Extrai o valor monetário a partir do texto livre da menção ao dia
+    const valor = normalizarValorMonetario(textoSemVencimento);
     if (valor && valor > 0) {
-      const { categoria, subcategoria } = identificarCategoriaESubcategoria(parte, cmd);
-      const titulo = extrairTituloLimpo(parte, subcategoria);
+      const { categoria, subcategoria } = identificarCategoriaESubcategoria(textoSemVencimento, cmd);
+      const titulo = extrairTituloLimpo(textoSemVencimento, subcategoria);
 
       acoes.adicionarItem({
         titulo,
         valor,
         categoria,
         tipoDetalhado: subcategoria,
-        vencimento: 'Dia 10',
+        vencimento, // <-- Se não falou o dia, fica 'A definir' e NÃO vai para o dia 10!
         pago:
           parte.toLowerCase().includes('paguei') ||
           parte.toLowerCase().includes('quitei') ||
@@ -941,6 +1031,8 @@ Entendo qualquer comando em linguagem natural por texto ou voz! Exemplos que voc
         valor,
         categoria: subcategoria,
         pilar: CATEGORIAS_CONFIG[categoria].nome,
+        vencimento,
+        agendadoNoCalendario: diaDetectado !== null,
       });
     }
   }
@@ -950,16 +1042,23 @@ Entendo qualquer comando em linguagem natural por texto ou voz! Exemplos que voc
 
     if (itensAdicionados.length === 1) {
       const item = itensAdicionados[0];
+      const statusVencimento = item.agendadoNoCalendario
+        ? `• **Vencimento:** ${item.vencimento} *(Agendado no Calendário)*`
+        : `• **Vencimento:** Não informado *(Não inserido no calendário)*`;
+
       return {
         sucesso: true,
         acaoExecutada: 'ADICIONAR_ITEM',
         itensModificados: 1,
-        mensagemResposta: `✅ **Lançamento Registrado com Sucesso!**\n• **${item.titulo}**: ${formatarBRL(item.valor)}\n• **Classificação:** ${item.pilar} (${item.categoria})\nOs limites e gráficos 50-30-20 foram atualizados em tempo real!`,
+        mensagemResposta: `✅ **Lançamento Registrado com Sucesso!**\n• **${item.titulo}**: ${formatarBRL(item.valor)}\n• **Classificação:** ${item.pilar} (${item.categoria})\n${statusVencimento}\nOs limites e gráficos 50-30-20 foram atualizados em tempo real!`,
       };
     }
 
     const linhas = itensAdicionados
-      .map((it) => `• **${it.titulo}**: ${formatarBRL(it.valor)} → *${it.pilar} (${it.categoria})*`)
+      .map((it) => {
+        const agendamento = it.agendadoNoCalendario ? `[${it.vencimento}]` : `[Sem agendamento]`;
+        return `• **${it.titulo}**: ${formatarBRL(it.valor)} → *${it.pilar} (${it.categoria})* ${agendamento}`;
+      })
       .join('\n');
 
     return {

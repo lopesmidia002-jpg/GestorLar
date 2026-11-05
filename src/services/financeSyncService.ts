@@ -9,17 +9,18 @@ export interface DadosNuvemCarregados {
 }
 
 /**
- * Carrega todos os dados diretamente do Supabase sem exigir tela de login
+ * Carrega todos os dados diretamente do Supabase filtrados pelo ID do usuário autenticado
  */
-export async function carregarDadosNuvem(): Promise<DadosNuvemCarregados> {
+export async function carregarDadosNuvem(userId: string = FAMILY_ID): Promise<DadosNuvemCarregados> {
   const client = getSupabaseClient();
   if (!client) return { encontrado: false };
 
   try {
-    // 1. Carrega o perfil do orçamento (renda e metas)
+    // 1. Carrega o perfil do orçamento (renda e metas) do usuário
     const { data: perfilData, error: perfilError } = await client
       .from('perfis_orcamento')
       .select('*')
+      .eq('user_id', userId)
       .limit(1)
       .maybeSingle();
 
@@ -27,10 +28,11 @@ export async function carregarDadosNuvem(): Promise<DadosNuvemCarregados> {
       console.warn('Aviso ao consultar perfis_orcamento:', perfilError.message);
     }
 
-    // 2. Carrega todos os lançamentos
+    // 2. Carrega todos os lançamentos do usuário
     const { data: itensData, error: itensError } = await client
       .from('itens_lancamento')
       .select('*')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (itensError) {
@@ -47,7 +49,7 @@ export async function carregarDadosNuvem(): Promise<DadosNuvemCarregados> {
       categoria: row.categoria,
       tipoDetalhado: row.tipo_detalhado || 'Geral',
       valor: Number(row.valor) || 0,
-      vencimento: row.vencimento || 'Dia 10',
+      vencimento: row.vencimento || 'A definir',
       pago: Boolean(row.pago),
     }));
 
@@ -71,14 +73,14 @@ export async function carregarDadosNuvem(): Promise<DadosNuvemCarregados> {
 /**
  * Migra ou sincroniza todo o estado local para a nuvem
  */
-export async function migrarDadosLocaisParaNuvem(estadoLocal: EstadoFinanceiro) {
+export async function migrarDadosLocaisParaNuvem(estadoLocal: EstadoFinanceiro, userId: string = FAMILY_ID) {
   const client = getSupabaseClient();
   if (!client) return;
 
   try {
     // Salva perfil
     await client.from('perfis_orcamento').upsert({
-      user_id: FAMILY_ID,
+      user_id: userId,
       renda_familiar: estadoLocal.rendaFamiliar,
       meta_fixas: estadoLocal.metasRegra.fixas,
       meta_superfluos: estadoLocal.metasRegra.superfluos,
@@ -90,7 +92,7 @@ export async function migrarDadosLocaisParaNuvem(estadoLocal: EstadoFinanceiro) 
     if (estadoLocal.itens.length > 0) {
       const rows = estadoLocal.itens.map((it) => ({
         id: it.id,
-        user_id: FAMILY_ID,
+        user_id: userId,
         titulo: it.titulo,
         categoria: it.categoria,
         tipo_detalhado: it.tipoDetalhado,
@@ -112,14 +114,15 @@ export async function migrarDadosLocaisParaNuvem(estadoLocal: EstadoFinanceiro) 
  */
 export async function sincronizarPerfilNuvem(
   rendaFamiliar: number,
-  metas: MetasRegra
+  metas: MetasRegra,
+  userId: string = FAMILY_ID
 ) {
   const client = getSupabaseClient();
   if (!client) return;
 
   try {
     await client.from('perfis_orcamento').upsert({
-      user_id: FAMILY_ID,
+      user_id: userId,
       renda_familiar: rendaFamiliar,
       meta_fixas: metas.fixas,
       meta_superfluos: metas.superfluos,
@@ -134,14 +137,14 @@ export async function sincronizarPerfilNuvem(
 /**
  * Sincroniza um item adicionado ou atualizado no Supabase
  */
-export async function sincronizarItemNuvem(item: ItemLancamento) {
+export async function sincronizarItemNuvem(item: ItemLancamento, userId: string = FAMILY_ID) {
   const client = getSupabaseClient();
   if (!client) return;
 
   try {
     await client.from('itens_lancamento').upsert({
       id: item.id,
-      user_id: FAMILY_ID,
+      user_id: userId,
       titulo: item.titulo,
       categoria: item.categoria,
       tipo_detalhado: item.tipoDetalhado,
@@ -158,7 +161,7 @@ export async function sincronizarItemNuvem(item: ItemLancamento) {
 /**
  * Remove um item do Supabase
  */
-export async function removerItemNuvem(itemId: string) {
+export async function removerItemNuvem(itemId: string, userId: string = FAMILY_ID) {
   const client = getSupabaseClient();
   if (!client) return;
 
@@ -166,7 +169,8 @@ export async function removerItemNuvem(itemId: string) {
     await client
       .from('itens_lancamento')
       .delete()
-      .eq('id', itemId);
+      .eq('id', itemId)
+      .eq('user_id', userId);
   } catch (e) {
     console.warn('Erro ao deletar item no Supabase:', e);
   }
@@ -175,18 +179,19 @@ export async function removerItemNuvem(itemId: string) {
 /**
  * Inscreve no Supabase Realtime para escutar inserções/atualizações feitas em outros aparelhos
  */
-export function inscreverTempoRealNuvem(onUpdate: () => void) {
+export function inscreverTempoRealNuvem(onUpdate: () => void, userId: string = FAMILY_ID) {
   const client = getSupabaseClient();
   if (!client) return () => {};
 
   const canal = client
-    .channel('gestorlar_auto_sync')
+    .channel(`gestorlar_sync_${userId}`)
     .on(
       'postgres_changes',
       {
         event: '*',
         schema: 'public',
         table: 'itens_lancamento',
+        filter: `user_id=eq.${userId}`,
       },
       () => {
         onUpdate();
@@ -198,6 +203,7 @@ export function inscreverTempoRealNuvem(onUpdate: () => void) {
         event: '*',
         schema: 'public',
         table: 'perfis_orcamento',
+        filter: `user_id=eq.${userId}`,
       },
       () => {
         onUpdate();

@@ -215,6 +215,20 @@ export function calcularDataVencimento(
 ): { dia: number; data: Date; formatada: string } | null {
   if (!vencimento || typeof vencimento !== 'string') return null;
   const v = vencimento.trim();
+  const vLower = v.toLowerCase();
+
+  // Ignora vencimentos não definidos ou sem agendamento
+  if (
+    vLower === 'a definir' ||
+    vLower === 'sem vencimento' ||
+    vLower === 'indefinido' ||
+    vLower === 'não informado' ||
+    vLower === 'nao informado' ||
+    vLower === 'fatura cartão' ||
+    vLower === 'fatura cartao'
+  ) {
+    return null;
+  }
 
   // 1. Formato ISO: YYYY-MM-DD
   const matchIso = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -238,10 +252,22 @@ export function calcularDataVencimento(
     return { dia, data, formatada };
   }
 
-  // 3. Formato Recorrente: "Dia 10", "15", "Dia 05"
-  const matchDia = v.match(/\b(?:dia\s*)?0?([1-9]|[12]\d|3[01])\b/i);
-  if (matchDia) {
-    const dia = parseInt(matchDia[1], 10);
+  // 3. Formato Recorrente com palavra "Dia" explícita: "Dia 10", "Dia 15", "Dia 05"
+  const matchDiaPrefixo = v.match(/^dia\s*0?([1-9]|[12]\d|3[01])$/i) || v.match(/\bdia\s*0?([1-9]|[12]\d|3[01])\b/i);
+  if (matchDiaPrefixo) {
+    const dia = parseInt(matchDiaPrefixo[1], 10);
+    const anoAtual = referenciaHoje.getFullYear();
+    const mesAtual = referenciaHoje.getMonth();
+    
+    const dataAtual = new Date(anoAtual, mesAtual, dia, 0, 0, 0, 0);
+    const formatada = `Dia ${dia.toString().padStart(2, '0')} (${(mesAtual + 1).toString().padStart(2, '0')}/${anoAtual})`;
+    return { dia, data: dataAtual, formatada };
+  }
+
+  // 4. Apenas o número puro do dia (ex: "10", "5")
+  const matchApenasDia = v.match(/^0?([1-9]|[12]\d|3[01])$/);
+  if (matchApenasDia) {
+    const dia = parseInt(matchApenasDia[1], 10);
     const anoAtual = referenciaHoje.getFullYear();
     const mesAtual = referenciaHoje.getMonth();
     

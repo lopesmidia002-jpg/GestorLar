@@ -48,6 +48,8 @@ pie title Distribuição Orçamentária Familiar
 - **Edição em Linha (Click-to-Edit):** Qualquer valor monetário, categoria ou status pode ser editado diretamente na interface, dispensando formulários modais excessivos.
 - **Gráficos Vivos a 60 FPS:** Renderização contínua orientada a equações senoidais e harmônicas em SVG sem bibliotecas pesadas de animação externa, estilizados em traços vetoriais matemáticos nítidos sem desfoque.
 - **Enquadramento e Alinhamento Técnico Estrito:** Todos os instrumentos contam com rodapés e badges protegidos por `shrink-0` e dimensões invariantes, prevenindo colisão ou corte visual nas bordas dos painéis.
+- **Botões de Confirmação e Ação Inline:** Os botões de confirmação (`Check`) e cancelamento (`X`) nas edições rápidas de renda e saldo livre mantêm proporção quadrada `38px x 38px` simétrica e alinhada à altura dos inputs, eliminando achatamentos visuais.
+- **Barra Superior com Todos os Itens Visíveis:** A barra de navegação principal (`HeaderMotorRenda`) distribui os 5 comandos operacionais (`Sync`, `Notificações`, `WhatsApp`, `Zerar` e `Nuvem`) com espaçamentos fluidos e `shrink-0`, assegurando que todos os itens permaneçam inteiramente visíveis sem transbordar a tela em smartphones.
 - **Offline Total e Autonomia:** O usuário pode gerenciar receitas, contas e despesas no metrô, avião ou locais sem sinal. As informações persistem de modo atômico e sincronizam em segundo plano ao reconectar.
 
 ---
@@ -75,6 +77,7 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
 - **Parser Semântico de Lançamentos:** Suporte a comandos coloquiais como *"Coloque 50 de almoço"*, *"Adiciona 100 de luz"*, *"Paguei a internet"*, com normalização de números por extenso, gírias monetárias (reais, conto, pila, k) e classificação automática no pilar 50-30-20.
 - **Auto-Envio por Silêncio:** Conclusão automática e envio do comando após 1.8 segundos de pausa na fala, fornecendo confirmação auditiva (TTS) e feedback visual imediato no ledger.
 - **Sobrescrita Explícita de Pilares:** Detecção de alta prioridade quando o usuário dita o pilar pretendido (*"como supérfluo"*, *"no fixo"*, *"em investimentos"*), garantindo alocação no pilar correto independentemente do termo padrão do dicionário e higienizando o título resultante.
+- **Extração Restrita de Vencimento por Voz:** O assistente não assume mais nenhum dia padrão (como o antigo 'Dia 10'). Gastos falados sem data recebem `vencimento: 'A definir'` e não entram no calendário; apenas quando o usuário disser o dia (*"dia 10"*, *"pro dia 5"*, *"vence dia 25"*, *"dia primeiro"*) o vencimento é extraído e agendado no calendário.
 
 ---
 
@@ -86,9 +89,11 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
 
 ## 9. Módulo de Calendário de Planejamento Mensal
 - **Planejamento Mês a Mês:** Navegação fluida entre meses com visão cronológica de todas as despesas e investimentos distribuídos em grade de 7 colunas (DOM a SÁB).
-- **Inteligência de Vencimento:** Suporte a vencimentos fixos recorrentes (ex: *"Dia 10"*) e datas fechadas (`YYYY-MM-DD` ou `DD/MM/YYYY`).
+- **Inteligência de Vencimento e Proteção de Dados Indefinidos:** Suporte a vencimentos fixos recorrentes (ex: *"Dia 10"*) e datas fechadas (`YYYY-MM-DD` ou `DD/MM/YYYY`). Lançamentos marcados como `'A definir'` ou sem dia explícito são preservados no orçamento e ledger, mas não poluem as células do calendário.
 - **Métricas Chave de Caixa:** Monitoramento de Previsto vs. Quitado, saldo em aberto e identificação automática do dia com pico de vencimentos.
 - **Agendamento Direto no Dia:** Abertura de gaveta de detalhes da data ao clicar em qualquer dia, permitindo marcar obrigações como pagas, remover lançamentos e agendar novas despesas/investimentos diretamente no dia selecionado.
+- **Filtros Lado a Lado no Mobile:** Exibição horizontal unificada (`overflow-x-auto no-scrollbar`) dos filtros de pilares e status no calendário e ledger, mantendo os seletores lado a lado sem quebras de linha em smartphones.
+- **Visualização Otimizada dos Itens no Grid Mobile:** Nas células diárias do calendário em smartphones, os itens utilizam micro-dots coloridos de status e títulos expandidos, eliminando truncamentos severos de 1 letra (`R..`, `A..`) e formatando totais monetários de forma compacta e sem cortes de dígitos.
 
 ---
 
@@ -102,5 +107,14 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
   - Respostas no Assistente Copilot para consultas por voz e texto sobre contas a vencer.
 - **Persistência de Preferências:** Salva número de telefone e parâmetros de antecedência no `localStorage`.
 - **Múltiplos Números Cadastrados:** Gerenciamento de múltiplos contatos da família (Cônjuge, Titular, Familiar) com ativação independente para recebimento de alertas.
+- **Abas Responsivas Sem Scroll Horizontal:** No modal de lembretes, a navegação entre abas adota grid simétrico de 3 colunas com ícones dedicados e rótulos adaptativos, garantindo visibilidade total em qualquer largura de smartphone.
 - **Automação Diária Inteligente:** Rotina que monitora as datas de vencimento e efetua o disparo automático diário para todos os contatos ativos sem repetições no mesmo dia, com suporte opcional a Webhooks e gateways REST WhatsApp para envio 100% silencioso.
+
+---
+
+## 11. Autenticação Multi-Usuário e Isolamento de Dados por Usuário
+- **Gateway de Acesso Factory Terminal (`TelaAutenticacao`):** Interface escura integrada ao Factory Design System solicitando e-mail e senha para acesso, com modos de Login e Criação de Nova Conta.
+- **Isolamento Completo Multi-Tenant:** Cada usuário que se cadastra ou faz login tem seu próprio `userId` e seu próprio espaço orçamentário (`gestor_financeiro_pwa_usr_${userId}`). O orçamento, renda, metas e lançamentos de uma conta nunca se misturam com os de outra.
+- **Arquitetura Híbrida Resiliente:** Integração primária com o Supabase Auth para sincronização segura em nuvem e persistência secundária local (`localStorage`), permitindo que contas registradas continuem operando mesmo quando o dispositivo estiver 100% offline.
+- **Perfil Ativo e Logout no Cabeçalho:** O componente `HeaderMotorRenda` exibe o usuário logado com indicador de conectividade e botão imediato de logout (*Sair*), retornando à tela de autenticação e protegendo os dados locais.
 

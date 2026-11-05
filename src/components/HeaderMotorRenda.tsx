@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { CalculoOrcamentario } from '../types/finance';
 import type { StatusSyncNuvem } from '../hooks/useFinanceStorage';
+import type { UsuarioLogado } from '../services/authService';
 import { formatarBRL, formatarPercentual, parseMoedaBR } from '../utils/calculations';
 import { 
   Edit3, 
@@ -11,7 +12,8 @@ import {
   Bell, 
   Database, 
   Trash2,
-  MessageSquare
+  MessageSquare,
+  LogOut
 } from 'lucide-react';
 
 interface Props {
@@ -19,6 +21,8 @@ interface Props {
   calculos: CalculoOrcamentario;
   isOnline: boolean;
   statusSync?: StatusSyncNuvem;
+  usuario?: UsuarioLogado | null;
+  onLogout?: () => void;
   onSincronizar?: () => void;
   onAbrirNotificacoes?: () => void;
   onAbrirWhatsApp?: () => void;
@@ -35,6 +39,8 @@ export const HeaderMotorRenda = ({
   calculos,
   isOnline,
   statusSync = 'local_only',
+  usuario,
+  onLogout,
   onSincronizar,
   onAbrirNotificacoes,
   onAbrirWhatsApp,
@@ -92,16 +98,16 @@ export const HeaderMotorRenda = ({
   return (
     <header className="w-full flex flex-col gap-10 pt-2 pb-4">
       {/* Top Navigation Bar: Factory Persistent Header (~64px height, #101010 transparent, minimal 3px radius) */}
-      <nav className="h-16 w-full flex items-center justify-between border-b border-[#3d3a39] px-1">
+      <nav className="h-16 w-full flex items-center justify-between border-b border-[#3d3a39] px-1 sm:px-2">
         {/* Left: Wordmark 'FACTORY' in Geist Mono uppercase with live signal dot */}
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             <span className="w-1.5 h-1.5 rounded-full bg-[#ee6018] shrink-0" title="War room operational" />
-            <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#eeeeee] font-normal">
+            <span className="font-mono text-xs uppercase tracking-[0.12em] sm:tracking-[0.2em] text-[#eeeeee] font-normal">
               FACTORY
             </span>
-            <span className="text-[#3d3a39] font-mono text-xs hidden sm:inline">/</span>
-            <span className="font-mono text-xs uppercase tracking-tight text-[#8a8380] hidden sm:inline">
+            <span className="text-[#3d3a39] font-mono text-xs hidden md:inline">/</span>
+            <span className="font-mono text-xs uppercase tracking-tight text-[#8a8380] hidden md:inline">
               GESTOR 50-30-20
             </span>
           </div>
@@ -127,16 +133,16 @@ export const HeaderMotorRenda = ({
         </div>
 
         {/* Right Actions: Ghost Link, Sync Pulse, High-Emphasis Light Button */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
           {/* Sync Trigger & State */}
           <div className="relative">
             <button
               onClick={handleDispararSincronizacao}
-              className="h-[34px] px-3 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#fafafa] text-[#eeeeee] hover:text-[#fafafa] font-mono text-xs uppercase tracking-tight flex items-center gap-2 cursor-pointer transition-colors"
+              className="h-[34px] px-2 sm:px-2.5 md:px-3 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#fafafa] text-[#eeeeee] hover:text-[#fafafa] font-mono text-xs uppercase tracking-tight flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-colors"
               title="Disparar sincronização com a nuvem"
             >
-              <RefreshCw className={`w-3 h-3 ${statusSync === 'sincronizando' ? 'animate-spin text-[#ee6018]' : ''}`} />
-              <span className="hidden sm:inline">
+              <RefreshCw className={`w-3.5 h-3.5 ${statusSync === 'sincronizando' ? 'animate-spin text-[#ee6018]' : ''}`} />
+              <span className="hidden md:inline">
                 {statusSync === 'conectado' && 'Sync OK'}
                 {statusSync === 'sincronizando' && 'Syncing...'}
                 {statusSync === 'local_only' && 'Sync Local'}
@@ -159,7 +165,7 @@ export const HeaderMotorRenda = ({
           {onAbrirNotificacoes && (
             <button
               onClick={onAbrirNotificacoes}
-              className="h-[34px] w-[34px] rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#fafafa] text-[#eeeeee] hover:text-[#fafafa] flex items-center justify-center cursor-pointer transition-colors"
+              className="h-[34px] w-[34px] rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#fafafa] text-[#eeeeee] hover:text-[#fafafa] flex items-center justify-center cursor-pointer transition-colors shrink-0"
               title="Notificações push"
             >
               <Bell className="w-3.5 h-3.5" />
@@ -170,11 +176,11 @@ export const HeaderMotorRenda = ({
           {onAbrirWhatsApp && (
             <button
               onClick={onAbrirWhatsApp}
-              className="h-[34px] px-2.5 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#25D366] text-[#8a8380] hover:text-[#25D366] flex items-center gap-1.5 font-mono text-xs uppercase tracking-tight cursor-pointer transition-colors relative"
+              className="h-[34px] px-2 sm:px-2.5 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#25D366] text-[#8a8380] hover:text-[#25D366] flex items-center justify-center gap-1 sm:gap-1.5 font-mono text-xs uppercase tracking-tight cursor-pointer transition-colors relative shrink-0"
               title="Lembretes de contas a vencer no WhatsApp"
             >
               <MessageSquare className="w-3.5 h-3.5 text-[#25D366]" />
-              <span className="hidden sm:inline">WhatsApp</span>
+              <span className="hidden md:inline">WhatsApp</span>
               {totalLembretesWhatsApp > 0 && (
                 <span className="px-1.5 py-0.2 rounded-full bg-[#ee6018] text-[#101010] text-[9px] font-bold">
                   {totalLembretesWhatsApp}
@@ -187,12 +193,11 @@ export const HeaderMotorRenda = ({
           {onAbrirZerarPainel && (
             <button
               onClick={onAbrirZerarPainel}
-              className="h-[34px] px-3 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#ee6018] text-[#8a8380] hover:text-[#ee6018] font-mono text-xs uppercase tracking-tight flex items-center gap-1.5 cursor-pointer transition-colors"
+              className="h-[34px] px-2 sm:px-2.5 md:px-3 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#ee6018] text-[#8a8380] hover:text-[#ee6018] font-mono text-xs uppercase tracking-tight flex items-center justify-center gap-1.5 cursor-pointer transition-colors shrink-0"
               title="Zerar todos os dados do painel"
             >
               <Trash2 className="w-3.5 h-3.5 text-[#ee6018]" />
-              <span className="hidden sm:inline">Zerar Painel</span>
-              <span className="sm:hidden">Zerar</span>
+              <span className="hidden min-[480px]:inline">Zerar</span>
             </button>
           )}
 
@@ -213,13 +218,39 @@ export const HeaderMotorRenda = ({
           {/* Log In / Conectar Nuvem: High-Emphasis Light Button (#fafafa fill, 3px radius, #101010 text) */}
           <button
             onClick={onAbrirNuvem}
-            className="h-[34px] px-3.5 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] font-normal text-xs uppercase tracking-tight flex items-center gap-1.5 cursor-pointer font-mono"
+            className="h-[34px] px-2.5 sm:px-3 md:px-3.5 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] font-normal text-xs uppercase tracking-tight flex items-center justify-center gap-1.5 cursor-pointer font-mono shrink-0"
             title="Conectar ou sincronizar conta de nuvem"
           >
-            <Database className="w-3 h-3" />
-            <span className="hidden sm:inline">Conectar Nuvem</span>
-            <span className="sm:hidden">Nuvem</span>
+            <Database className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden min-[480px]:inline md:hidden">Nuvem</span>
+            <span className="hidden md:inline">Conectar Nuvem</span>
           </button>
+
+          {/* Usuário Autenticado & Botão Sair */}
+          {usuario && (
+            <div className="flex items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 border-l border-[#3d3a39] shrink-0">
+              <div className="hidden min-[640px]:flex flex-col text-right leading-tight select-none">
+                <span className="font-mono text-xs text-[#eeeeee] font-medium max-w-[120px] truncate" title={usuario.nome || usuario.email}>
+                  {usuario.nome || usuario.email.split('@')[0]}
+                </span>
+                <span className="font-mono text-[9px] text-[#8a8380] uppercase tracking-wider flex items-center justify-end gap-1">
+                  <span className={`w-1.5 h-1.5 rounded-full ${usuario.origem === 'supabase' ? 'bg-[#a0ca92]' : 'bg-[#ee6018]'}`} />
+                  {usuario.origem === 'supabase' ? 'Nuvem' : 'Local'}
+                </span>
+              </div>
+
+              {onLogout && (
+                <button
+                  onClick={onLogout}
+                  className="h-[34px] px-2 sm:px-2.5 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#ee6018] text-[#8a8380] hover:text-[#ee6018] font-mono text-xs uppercase tracking-tight flex items-center justify-center gap-1 cursor-pointer transition-colors shrink-0"
+                  title={`Sair da conta (${usuario.email})`}
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Sair</span>
+                </button>
+              )}
+            </div>
+          )}
         </div>
       </nav>
 
@@ -238,7 +269,7 @@ export const HeaderMotorRenda = ({
 
             {editandoRenda ? (
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs font-mono text-[#8a8380]">R$</span>
+                <span className="text-xs font-mono text-[#8a8380] shrink-0">R$</span>
                 <input
                   type="text"
                   value={valorTemp}
@@ -248,19 +279,21 @@ export const HeaderMotorRenda = ({
                     if (e.key === 'Escape') setEditandoRenda(false);
                   }}
                   autoFocus
-                  className="w-full bg-[#1d1a18] border border-[#eeeeee] rounded-[3px] px-2 py-1 text-2xl font-mono text-[#eeeeee] focus:outline-none"
+                  className="flex-1 min-w-0 bg-[#1d1a18] border border-[#eeeeee] rounded-[3px] px-2.5 py-1 text-2xl font-mono text-[#eeeeee] focus:outline-none focus:ring-1 focus:ring-[#eeeeee]"
                 />
                 <button
                   onClick={handleSalvarRenda}
-                  className="h-8 px-2 bg-[#fafafa] text-[#101010] rounded-[3px] text-xs font-mono"
+                  className="h-[38px] w-[38px] shrink-0 bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] rounded-[3px] flex items-center justify-center transition-colors cursor-pointer"
+                  title="Confirmar"
                 >
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-4 h-4 stroke-[2.5]" />
                 </button>
                 <button
                   onClick={() => setEditandoRenda(false)}
-                  className="h-8 px-2 bg-[#1d1a18] border border-[#3d3a39] text-[#8a8380] rounded-[3px] text-xs"
+                  className="h-[38px] w-[38px] shrink-0 bg-[#1d1a18] hover:bg-[#3d3a39] border border-[#3d3a39] text-[#8a8380] hover:text-[#eeeeee] rounded-[3px] flex items-center justify-center transition-colors cursor-pointer"
+                  title="Cancelar"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4 stroke-[2.5]" />
                 </button>
               </div>
             ) : (
@@ -310,7 +343,7 @@ export const HeaderMotorRenda = ({
             {/* Headline: Geist 36px weight 400, #101010, tracking -1.12px */}
             {editandoSaldoLivre ? (
               <div className="flex items-center gap-2 mt-1">
-                <span className="text-xs font-mono text-[#4d4947]">R$</span>
+                <span className="text-xs font-mono text-[#4d4947] shrink-0">R$</span>
                 <input
                   type="text"
                   value={tempSaldoLivre}
@@ -320,19 +353,21 @@ export const HeaderMotorRenda = ({
                     if (e.key === 'Escape') setEditandoSaldoLivre(false);
                   }}
                   autoFocus
-                  className="w-full bg-white border border-[#101010] rounded-[3px] px-2 py-1 text-2xl font-mono text-[#101010] focus:outline-none"
+                  className="flex-1 min-w-0 bg-white border border-[#101010] rounded-[3px] px-2.5 py-1 text-2xl font-mono text-[#101010] focus:outline-none focus:ring-1 focus:ring-[#101010]"
                 />
                 <button
                   onClick={handleSalvarSaldoLivre}
-                  className="h-8 px-2 bg-[#101010] text-[#eeeeee] rounded-[3px] text-xs font-mono cursor-pointer"
+                  className="h-[38px] w-[38px] shrink-0 bg-[#101010] hover:bg-[#252220] text-[#fafafa] rounded-[3px] flex items-center justify-center transition-colors cursor-pointer"
+                  title="Confirmar"
                 >
-                  <Check className="w-3.5 h-3.5" />
+                  <Check className="w-4 h-4 stroke-[2.5]" />
                 </button>
                 <button
                   onClick={() => setEditandoSaldoLivre(false)}
-                  className="h-8 px-2 bg-neutral-300 text-[#101010] rounded-[3px] text-xs cursor-pointer"
+                  className="h-[38px] w-[38px] shrink-0 bg-[#d8d3d0] hover:bg-[#c2bcb8] text-[#101010] border border-[#b8b3b0] rounded-[3px] flex items-center justify-center transition-colors cursor-pointer"
+                  title="Cancelar"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4 stroke-[2.5]" />
                 </button>
               </div>
             ) : (
@@ -369,11 +404,19 @@ export const HeaderMotorRenda = ({
                   autoFocus
                   className="w-20 bg-white border border-[#101010] rounded-[3px] px-1 py-0.5 text-xs font-mono text-[#101010] focus:outline-none"
                 />
-                <button onClick={handleSalvarTotalGastos} className="text-[#101010]">
-                  <Check className="w-3 h-3" />
+                <button 
+                  onClick={handleSalvarTotalGastos} 
+                  className="w-5 h-5 flex items-center justify-center bg-[#101010] text-[#fafafa] rounded-[2px] cursor-pointer hover:bg-[#252220]"
+                  title="Confirmar"
+                >
+                  <Check className="w-3 h-3 stroke-[2.5]" />
                 </button>
-                <button onClick={() => setEditandoTotalGastos(false)} className="text-[#4d4947]">
-                  <X className="w-3 h-3" />
+                <button 
+                  onClick={() => setEditandoTotalGastos(false)} 
+                  className="w-5 h-5 flex items-center justify-center bg-[#d8d3d0] text-[#101010] rounded-[2px] cursor-pointer hover:bg-[#c2bcb8]"
+                  title="Cancelar"
+                >
+                  <X className="w-3 h-3 stroke-[2.5]" />
                 </button>
               </div>
             ) : (

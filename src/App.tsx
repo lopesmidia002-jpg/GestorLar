@@ -13,20 +13,52 @@ import { ModalConexaoNuvem } from './components/ModalConexaoNuvem';
 import { ModalZerarPainel } from './components/ModalZerarPainel';
 import { BannerLembreteWhatsApp } from './components/BannerLembreteWhatsApp';
 import { ModalLembretesWhatsApp } from './components/ModalLembretesWhatsApp';
-import { 
-  obterConfiguracaoWhatsApp, 
+import { TelaAutenticacao } from './components/TelaAutenticacao';
+import {
+  obterUsuarioAtual,
+  fazerLogout,
+  type UsuarioLogado
+} from './services/authService';
+import {
+  obterConfiguracaoWhatsApp,
   analisarContasParaLembrete,
   executarDisparoAutomaticoSeNecessario
 } from './services/whatsappReminderService';
-import { 
-  executarVerificacaoGlobalENotificar, 
-  escutarNotificacoesPrimeiroPlano 
+import {
+  executarVerificacaoGlobalENotificar,
+  escutarNotificacoesPrimeiroPlano
 } from './services/firebaseNotificationService';
 import type { CategoriaOrcamentaria } from './types/finance';
 import { CATEGORIAS_CONFIG } from './utils/calculations';
 import { Download, ArrowRight } from 'lucide-react';
 
 export function App() {
+  const [usuario, setUsuario] = useState<UsuarioLogado | null>(null);
+  const [carregandoSessao, setCarregandoSessao] = useState(true);
+
+  // Verifica se já existe sessão de login ativa (Supabase ou Local)
+  useEffect(() => {
+    let isMounted = true;
+    obterUsuarioAtual()
+      .then((usr) => {
+        if (isMounted) {
+          setUsuario(usr);
+          setCarregandoSessao(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setCarregandoSessao(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await fazerLogout();
+    setUsuario(null);
+  };
+
   const {
     estado,
     calculos,
@@ -44,7 +76,7 @@ export function App() {
     ajustarTotalGeral,
     redefinirDadosPadrao,
     zerarPainel,
-  } = useFinanceStorage();
+  } = useFinanceStorage(usuario?.id);
 
   const [filtroPilar, setFiltroPilar] = useState<CategoriaOrcamentaria | 'todos'>('todos');
   const [modalNotificacoesAberto, setModalNotificacoesAberto] = useState(false);
@@ -58,6 +90,7 @@ export function App() {
 
   // Monitora contas vencendo, risco de saldo negativo e escuta mensagens push em primeiro plano
   useEffect(() => {
+    if (!usuario) return;
     executarVerificacaoGlobalENotificar(estado, calculos);
     let cancelar: (() => void) | null = null;
 
@@ -70,10 +103,11 @@ export function App() {
     return () => {
       if (cancelar) cancelar();
     };
-  }, [estado, calculos]);
+  }, [estado, calculos, usuario]);
 
   // Automação diária de alertas no WhatsApp para os números cadastrados
   useEffect(() => {
+    if (!usuario) return;
     if (estado.itens.length > 0) {
       executarDisparoAutomaticoSeNecessario(estado.itens).then((res) => {
         if (res.disparado) {
@@ -81,7 +115,7 @@ export function App() {
         }
       });
     }
-  }, [estado.itens]);
+  }, [estado.itens, usuario]);
 
   // Exportar backup JSON
   const exportarJSON = () => {
@@ -94,6 +128,19 @@ export function App() {
     downloadAnchor.remove();
   };
 
+  if (carregandoSessao) {
+    return (
+      <div className="min-h-screen bg-[#101010] text-[#eeeeee] flex flex-col items-center justify-center font-mono gap-3 select-none">
+        <div className="w-6 h-6 border-2 border-[#ee6018] border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs uppercase tracking-widest text-[#8a8380]">INICIALIZANDO MOTOR FACTORY...</span>
+      </div>
+    );
+  }
+
+  if (!usuario) {
+    return <TelaAutenticacao onAutenticado={setUsuario} />;
+  }
+
   return (
     <div className="min-h-screen bg-[#101010] text-[#eeeeee] relative overflow-x-hidden selection:bg-[#ee6018] selection:text-[#101010] font-sans">
       <div className="relative z-10 w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 flex flex-col gap-16 py-6 pb-24">
@@ -103,6 +150,8 @@ export function App() {
           calculos={calculos}
           isOnline={isOnline}
           statusSync={statusSync}
+          usuario={usuario}
+          onLogout={handleLogout}
           onSincronizar={forcarSincronizacao}
           onAbrirNotificacoes={() => setModalNotificacoesAberto(true)}
           onAbrirWhatsApp={() => setModalWhatsAppAberto(true)}
@@ -187,7 +236,7 @@ export function App() {
               valor,
               categoria,
               tipoDetalhado: CATEGORIAS_CONFIG[categoria].subcategorias[0] || 'Geral',
-              vencimento: 'Dia 10',
+              vencimento: 'A definir',
               pago: false,
             });
           }}

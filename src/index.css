@@ -288,6 +288,15 @@ button, a, input, select {
   filter: none !important;
 }
 
+/* Utility to hide scrollbars while allowing horizontal scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   * {
     animation-duration: 0.01ms !important;

@@ -228,7 +228,7 @@ async function handleCreateExpense(
       valor: valor,
       categoria: categoriaCanonica,
       tipoDetalhado: data.category || 'Geral',
-      vencimento: data.due_date || (isCartao ? 'Fatura Cartão' : 'Dia 10'),
+      vencimento: data.due_date || (isCartao ? 'Fatura Cartão' : 'A definir'),
       pago: data.status === 'paid'
     });
   }

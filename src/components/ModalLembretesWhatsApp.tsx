@@ -30,7 +30,8 @@ import {
   Users,
   Zap,
   CheckCircle2,
-  Globe
+  Globe,
+  Bell
 } from 'lucide-react';
 
 interface Props {
@@ -208,41 +209,47 @@ export const ModalLembretesWhatsApp = ({
           </button>
         </div>
 
-        {/* Abas de Navegação */}
-        <div className="flex items-center border-b border-[#3d3a39] px-4 sm:px-6 bg-[#121110] overflow-x-auto">
+        {/* Abas de Navegação Responsivas em Grid 3 Colunas (Sem Barra Horizontal) */}
+        <div className="grid grid-cols-3 border-b border-[#3d3a39] px-2 sm:px-6 bg-[#121110]">
           <button
             onClick={() => setAbaAtiva('lembretes')}
-            className={`py-3 px-3.5 font-mono text-xs uppercase tracking-tight border-b-2 cursor-pointer transition whitespace-nowrap ${
+            className={`py-2.5 sm:py-3 px-1 sm:px-3 font-mono text-[10px] sm:text-xs uppercase tracking-tight border-b-2 cursor-pointer transition flex items-center justify-center gap-1 sm:gap-1.5 ${
               abaAtiva === 'lembretes'
                 ? 'border-[#25D366] text-[#fafafa] font-medium'
                 : 'border-transparent text-[#8a8380] hover:text-[#eeeeee]'
             }`}
           >
-            Contas a Vencer ({resumo.todasNotificaveis.length})
+            <Bell className="w-3.5 h-3.5 shrink-0 text-[#25D366]" />
+            <span className="hidden sm:inline">Contas a Vencer</span>
+            <span className="sm:hidden">Contas</span>
+            <span>({resumo.todasNotificaveis.length})</span>
           </button>
           
           <button
             onClick={() => setAbaAtiva('destinatarios')}
-            className={`py-3 px-3.5 font-mono text-xs uppercase tracking-tight border-b-2 cursor-pointer transition whitespace-nowrap flex items-center gap-1.5 ${
+            className={`py-2.5 sm:py-3 px-1 sm:px-3 font-mono text-[10px] sm:text-xs uppercase tracking-tight border-b-2 cursor-pointer transition flex items-center justify-center gap-1 sm:gap-1.5 ${
               abaAtiva === 'destinatarios'
                 ? 'border-[#25D366] text-[#fafafa] font-medium'
                 : 'border-transparent text-[#8a8380] hover:text-[#eeeeee]'
             }`}
           >
-            <Users className="w-3.5 h-3.5" />
-            <span>Números Cadastrados ({config.destinatarios.length})</span>
+            <Users className="w-3.5 h-3.5 shrink-0 text-[#3b82f6]" />
+            <span className="hidden sm:inline">Números Cadastrados</span>
+            <span className="sm:hidden">Números</span>
+            <span>({config.destinatarios.length})</span>
           </button>
 
           <button
             onClick={() => setAbaAtiva('automacao')}
-            className={`py-3 px-3.5 font-mono text-xs uppercase tracking-tight border-b-2 cursor-pointer transition whitespace-nowrap flex items-center gap-1.5 ${
+            className={`py-2.5 sm:py-3 px-1 sm:px-3 font-mono text-[10px] sm:text-xs uppercase tracking-tight border-b-2 cursor-pointer transition flex items-center justify-center gap-1 sm:gap-1.5 ${
               abaAtiva === 'automacao'
                 ? 'border-[#25D366] text-[#fafafa] font-medium'
                 : 'border-transparent text-[#8a8380] hover:text-[#eeeeee]'
             }`}
           >
-            <Zap className="w-3.5 h-3.5 text-[#ee6018]" />
-            <span>Automação Diária</span>
+            <Zap className="w-3.5 h-3.5 shrink-0 text-[#ee6018]" />
+            <span className="hidden sm:inline">Automação Diária</span>
+            <span className="sm:hidden">Automação</span>
           </button>
         </div>
 

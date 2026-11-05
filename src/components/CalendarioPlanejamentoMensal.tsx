@@ -41,6 +41,20 @@ const DIAS_SEMANA = ['DOM', 'SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SÁB'];
 function extrairDiaDoVencimento(vencimento: string, ano: number, mes: number): number | null {
   if (!vencimento) return null;
   const v = vencimento.trim();
+  const vLower = v.toLowerCase();
+
+  // Se não foi definido dia ou foi marcado como a definir / sem vencimento / fatura cartão, ignora
+  if (
+    vLower === 'a definir' ||
+    vLower === 'sem vencimento' ||
+    vLower === 'indefinido' ||
+    vLower === 'não informado' ||
+    vLower === 'nao informado' ||
+    vLower === 'fatura cartão' ||
+    vLower === 'fatura cartao'
+  ) {
+    return null;
+  }
 
   // 1. Formato ISO: YYYY-MM-DD
   const matchIso = v.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -66,13 +80,30 @@ function extrairDiaDoVencimento(vencimento: string, ano: number, mes: number): n
     return null;
   }
 
-  // 3. Formato recorrente genérico: "Dia 10", "Dia 15", "10", "Dia 05"
-  const matchDia = v.match(/\b(?:dia\s*)?0?([1-9]|[12]\d|3[01])\b/i);
-  if (matchDia) {
-    return parseInt(matchDia[1], 10);
+  // 3. Formato recorrente com palavra "Dia" explícita: "Dia 10", "Dia 15", "Dia 05"
+  const matchDiaPrefixo = v.match(/^dia\s*0?([1-9]|[12]\d|3[01])$/i) || v.match(/\bdia\s*0?([1-9]|[12]\d|3[01])\b/i);
+  if (matchDiaPrefixo) {
+    return parseInt(matchDiaPrefixo[1], 10);
+  }
+
+  // 4. Apenas o número puro do dia (ex: "10", "5")
+  const matchApenasDia = v.match(/^0?([1-9]|[12]\d|3[01])$/);
+  if (matchApenasDia) {
+    return parseInt(matchApenasDia[1], 10);
   }
 
   return null;
+}
+
+/**
+ * Formata valores para caberem perfeitamente nas células estreitas do grid mobile sem cortar dígitos
+ */
+function formatarTotalDiaCompacto(valor: number): string {
+  if (valor <= 0) return '';
+  if (valor % 1 === 0) {
+    return `R$ ${Math.round(valor).toLocaleString('pt-BR')}`;
+  }
+  return `R$ ${valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export const CalendarioPlanejamentoMensal = ({
@@ -331,12 +362,12 @@ export const CalendarioPlanejamentoMensal = ({
         </div>
 
         {/* 3. Filtros do Calendário */}
-        <div className="px-6 py-3 border-b border-[#3d3a39] bg-[#161413] flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-[10px] text-[#8a8380] uppercase mr-1">Filtrar:</span>
+        <div className="px-3 sm:px-6 py-2.5 sm:py-3 border-b border-[#3d3a39] bg-[#161413] flex items-center justify-start md:justify-between gap-2.5 sm:gap-3 text-xs font-mono overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            <span className="text-[10px] text-[#8a8380] uppercase mr-1 whitespace-nowrap">Filtrar:</span>
             <button
               onClick={() => setFiltroPilar('todos')}
-              className={`px-2 py-0.5 rounded-[3px] border transition ${
+              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroPilar === 'todos' 
                   ? 'bg-[#fafafa] text-[#101010] border-[#fafafa]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
@@ -346,7 +377,7 @@ export const CalendarioPlanejamentoMensal = ({
             </button>
             <button
               onClick={() => setFiltroPilar('fixas')}
-              className={`px-2 py-0.5 rounded-[3px] border transition ${
+              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroPilar === 'fixas' 
                   ? 'bg-[#eeeeee] text-[#101010] border-[#eeeeee]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
@@ -356,7 +387,7 @@ export const CalendarioPlanejamentoMensal = ({
             </button>
             <button
               onClick={() => setFiltroPilar('superfluos')}
-              className={`px-2 py-0.5 rounded-[3px] border transition ${
+              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroPilar === 'superfluos' 
                   ? 'bg-[#ee6018] text-[#101010] border-[#ee6018]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
@@ -366,7 +397,7 @@ export const CalendarioPlanejamentoMensal = ({
             </button>
             <button
               onClick={() => setFiltroPilar('investimentos')}
-              className={`px-2 py-0.5 rounded-[3px] border transition ${
+              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroPilar === 'investimentos' 
                   ? 'bg-[#a0ca92] text-[#101010] border-[#a0ca92]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
@@ -376,10 +407,13 @@ export const CalendarioPlanejamentoMensal = ({
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          {/* Divisor vertical sutil entre pilares e status */}
+          <div className="h-4 w-px bg-[#3d3a39] shrink-0" />
+
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
             <button
               onClick={() => setFiltroStatus('todos')}
-              className={`px-2 py-0.5 rounded-[3px] border transition ${
+              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroStatus === 'todos' 
                   ? 'bg-[#1d1a18] text-[#eeeeee] border-[#fafafa]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39]'
@@ -389,7 +423,7 @@ export const CalendarioPlanejamentoMensal = ({
             </button>
             <button
               onClick={() => setFiltroStatus('pendentes')}
-              className={`px-2 py-0.5 rounded-[3px] border transition ${
+              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroStatus === 'pendentes' 
                   ? 'bg-[#ee6018]/10 text-[#ee6018] border-[#ee6018]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39]'
@@ -399,7 +433,7 @@ export const CalendarioPlanejamentoMensal = ({
             </button>
             <button
               onClick={() => setFiltroStatus('pagos')}
-              className={`px-2 py-0.5 rounded-[3px] border transition ${
+              className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
                 filtroStatus === 'pagos' 
                   ? 'bg-[#a0ca92]/10 text-[#a0ca92] border-[#a0ca92]' 
                   : 'bg-transparent text-[#8a8380] border-[#3d3a39]'
@@ -411,11 +445,11 @@ export const CalendarioPlanejamentoMensal = ({
         </div>
 
         {/* 4. Grade do Calendário (7 Colunas: DOM a SÁB) */}
-        <div className="p-4 md:p-6 bg-[#101010]">
+        <div className="p-2 sm:p-4 md:p-6 bg-[#101010]">
           {/* Cabeçalho dos dias da semana */}
           <div className="grid grid-cols-7 gap-1 md:gap-2 mb-2 text-center">
             {DIAS_SEMANA.map((dia) => (
-              <span key={dia} className="font-mono text-[10px] md:text-xs text-[#8a8380] uppercase tracking-wider py-1">
+              <span key={dia} className="font-mono text-[9px] sm:text-[10px] md:text-xs text-[#8a8380] uppercase tracking-wider py-1">
                 {dia}
               </span>
             ))}
@@ -427,7 +461,7 @@ export const CalendarioPlanejamentoMensal = ({
             {Array.from({ length: primeiroDiaSemana }).map((_, idx) => (
               <div 
                 key={`vazio_${idx}`} 
-                className="min-h-[72px] md:min-h-[92px] rounded-[3px] bg-[#161413]/30 border border-transparent p-1.5 opacity-25 select-none"
+                className="min-h-[74px] sm:min-h-[84px] md:min-h-[94px] rounded-[3px] bg-[#161413]/30 border border-transparent p-1 opacity-25 select-none"
               />
             ))}
 
@@ -443,7 +477,7 @@ export const CalendarioPlanejamentoMensal = ({
                 <div
                   key={`dia_${dia}`}
                   onClick={() => setDiaSelecionado(dia)}
-                  className={`min-h-[72px] md:min-h-[92px] rounded-[3px] p-1.5 md:p-2 border transition-all cursor-pointer flex flex-col justify-between group ${
+                  className={`min-h-[74px] sm:min-h-[84px] md:min-h-[94px] rounded-[3px] p-1 sm:p-1.5 md:p-2 border transition-all cursor-pointer flex flex-col justify-between group overflow-hidden ${
                     selecionado
                       ? 'bg-[#1d1a18] border-[#fafafa] ring-1 ring-[#fafafa]/20'
                       : ehDiaAtual
@@ -452,7 +486,7 @@ export const CalendarioPlanejamentoMensal = ({
                   }`}
                 >
                   {/* Topo da Célula: Número do Dia + Indicador de Hoje */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between leading-none mb-0.5">
                     <span className={`font-mono text-xs md:text-sm font-medium ${
                       ehDiaAtual ? 'text-[#ee6018]' : selecionado ? 'text-[#fafafa]' : 'text-[#8a8380] group-hover:text-[#eeeeee]'
                     }`}>
@@ -468,44 +502,57 @@ export const CalendarioPlanejamentoMensal = ({
                     )}
                   </div>
 
-                  {/* Meio: Mini Pílulas de Lançamentos */}
-                  <div className="flex flex-col gap-1 my-1 overflow-hidden">
+                  {/* Meio: Mini Pílulas de Lançamentos com Micro-Dot e Título Expandido */}
+                  <div className="flex flex-col gap-0.5 sm:gap-1 my-0.5 overflow-hidden">
                     {itensDoDia.slice(0, 2).map((it) => (
                       <div
                         key={it.id}
-                        className={`text-[9px] md:text-[10px] font-mono truncate px-1 rounded-[2px] border flex items-center justify-between ${
+                        className={`text-[8.5px] sm:text-[9.5px] md:text-[10px] font-mono px-1 py-0.5 rounded-[2px] border flex items-center justify-between gap-0.5 leading-tight transition-colors ${
                           it.pago
-                            ? 'bg-[#a0ca92]/10 text-[#a0ca92] border-[#a0ca92]/30'
+                            ? 'bg-[#a0ca92]/15 text-[#a0ca92] border-[#a0ca92]/40'
                             : it.categoria === 'superfluos'
-                            ? 'bg-[#ee6018]/10 text-[#ee6018] border-[#ee6018]/30'
-                            : 'bg-[#101010] text-[#eeeeee] border-[#3d3a39]'
+                            ? 'bg-[#ee6018]/15 text-[#ee6018] border-[#ee6018]/40'
+                            : 'bg-[#1d1a18] text-[#eeeeee] border-[#3d3a39]'
                         }`}
                         title={`${it.titulo} - ${formatarBRL(it.valor)} (${it.pago ? 'Pago' : 'Pendente'})`}
                       >
-                        <span className="truncate">{it.titulo}</span>
+                        <div className="flex items-center gap-1 min-w-0 flex-1">
+                          <span 
+                            className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              it.pago 
+                                ? 'bg-[#a0ca92]' 
+                                : it.categoria === 'superfluos' 
+                                ? 'bg-[#ee6018]' 
+                                : 'bg-[#eeeeee]'
+                            }`} 
+                          />
+                          <span className="truncate font-medium">{it.titulo}</span>
+                        </div>
+
                         {it.pago ? (
-                          <Check className="w-2.5 h-2.5 shrink-0 ml-0.5" />
+                          <Check className="w-2.5 h-2.5 shrink-0 ml-0.5 hidden sm:block text-[#a0ca92]" />
                         ) : (
-                          <Clock className="w-2.5 h-2.5 shrink-0 ml-0.5" />
+                          <Clock className="w-2.5 h-2.5 shrink-0 ml-0.5 hidden sm:block text-[#ee6018]" />
                         )}
                       </div>
                     ))}
 
                     {itensDoDia.length > 2 && (
-                      <span className="text-[8px] md:text-[9px] font-mono text-[#8a8380]">
+                      <span className="text-[8px] sm:text-[9px] font-mono text-[#8a8380] pl-0.5 font-medium leading-none">
                         +{itensDoDia.length - 2} mais
                       </span>
                     )}
                   </div>
 
-                  {/* Rodapé da Célula: Valor Total do Dia */}
-                  <div className="text-right">
+                  {/* Rodapé da Célula: Valor Total do Dia Compacto e Sem Cortes */}
+                  <div className="text-right mt-auto pt-0.5">
                     {totalDia > 0 ? (
-                      <span className="font-mono text-[9px] md:text-[11px] text-[#eeeeee] block tracking-tighter">
-                        {formatarBRL(totalDia)}
+                      <span className="font-mono text-[8.5px] sm:text-[9.5px] md:text-[11px] text-[#eeeeee] block tracking-tighter truncate font-medium">
+                        <span className="sm:hidden">{formatarTotalDiaCompacto(totalDia)}</span>
+                        <span className="hidden sm:inline">{formatarBRL(totalDia)}</span>
                       </span>
                     ) : (
-                      <span className="text-[9px] text-[#3d3a39] font-mono block">--</span>
+                      <span className="text-[8.5px] text-transparent font-mono block select-none">-</span>
                     )}
                   </div>
                 </div>

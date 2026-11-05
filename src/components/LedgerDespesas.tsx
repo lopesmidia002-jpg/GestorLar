@@ -49,7 +49,7 @@ export const LedgerDespesas = ({
   const [novaCategoria, setNovaCategoria] = useState<CategoriaOrcamentaria>('fixas');
   const [novoTipo, setNovoTipo] = useState('Moradia');
   const [novoValor, setNovoValor] = useState('');
-  const [novoVencimento, setNovoVencimento] = useState('Dia 10');
+  const [novoVencimento, setNovoVencimento] = useState('');
 
   // Filtros aplicados
   const itensFiltrados = useMemo(() => {
@@ -166,9 +166,9 @@ export const LedgerDespesas = ({
           </div>
 
           {/* Filters & Action */}
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3 overflow-x-auto no-scrollbar py-0.5">
             {/* Filter Pillar */}
-            <div className="inline-flex rounded-[3px] border border-[#3d3a39] bg-[#161413] p-0.5 text-xs font-mono">
+            <div className="shrink-0 inline-flex rounded-[3px] border border-[#3d3a39] bg-[#161413] p-0.5 text-xs font-mono">
               <button
                 onClick={() => onSelecionarFiltroPilar('todos')}
                 className={`px-2.5 py-1 rounded-[2px] transition ${
@@ -204,7 +204,7 @@ export const LedgerDespesas = ({
             </div>
 
             {/* Filter Status */}
-            <div className="inline-flex rounded-[3px] border border-[#3d3a39] bg-[#161413] p-0.5 text-xs font-mono">
+            <div className="shrink-0 inline-flex rounded-[3px] border border-[#3d3a39] bg-[#161413] p-0.5 text-xs font-mono">
               <button
                 onClick={() => setFiltroPago('todos')}
                 className={`px-2 py-1 rounded-[2px] ${
@@ -234,7 +234,7 @@ export const LedgerDespesas = ({
             {/* New Entry Button: Light Filled Button (#fafafa fill, 3px radius, #101010 text) */}
             <button
               onClick={() => setMostrandoNovo(!mostrandoNovo)}
-              className="h-[32px] px-3.5 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] text-xs font-mono uppercase tracking-tight flex items-center gap-1.5 cursor-pointer"
+              className="shrink-0 whitespace-nowrap h-[32px] px-3.5 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] text-xs font-mono uppercase tracking-tight flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Novo Lançamento</span>
@@ -322,8 +322,8 @@ export const LedgerDespesas = ({
                   type="text"
                   value={novoVencimento}
                   onChange={(e) => setNovoVencimento(e.target.value)}
-                  placeholder="Ex: Dia 10"
-                  className="bg-[#101010] border border-[#3d3a39] rounded-[3px] px-2 py-1 text-xs text-[#eeeeee] w-24 focus:border-[#eeeeee] focus:outline-none font-mono"
+                  placeholder="Ex: Dia 10 (Opcional)"
+                  className="bg-[#101010] border border-[#3d3a39] rounded-[3px] px-2 py-1 text-xs text-[#eeeeee] w-36 focus:border-[#eeeeee] focus:outline-none font-mono"
                 />
               </div>
 

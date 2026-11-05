@@ -152,6 +152,14 @@ Para assegurar alinhamento e impedir compressão de elementos em telas de difere
 2. **Badge Estruturado `LIVE STREAM`:** O indicador de fluxo contínuo foi estruturado em um badge dedicado (fundo Carbon `#1d1a18`, borda hairline em Metric Green `#a0ca92]/40`, tipografia Geist Mono e pulso de status ativo).
 3. **Escalonamento Responsivo do SVG:** A área gráfica utiliza `flex-1` com altura adaptativa e viewBox otimizado, mantendo as amplitudes senoidais perfeitamente contidas.
 
+### 5.4 Proporção e Alinhamento dos Botões Inline (`HeaderMotorRenda`)
+1. **Geometria Equilibrada (`h-[38px] w-[38px] shrink-0`):** Os botões de confirmação (`Check`) e cancelamento (`X`) nos campos de edição inline da Renda e do Saldo Livre (card de despacho) foram redimensionados para formato quadrado de 38px, perfeitamente alinhados à altura do input `text-2xl`, eliminando achatamentos causados por herança de espaçamento.
+2. **Iconografia e Contraste Reforçados:** Ícones renderizados com espessura nítida (`stroke-[2.5]`), preenchimento em contraste absoluto e estados de hover com transições mecânicas imediatas.
+
+### 5.5 Barra Superior Responsiva sem Cortes (`HeaderMotorRenda nav`)
+1. **Dimensionamento Compacto e Enquadramento Total:** A barra de navegação superior foi ajustada com espaçamentos fluidos (`gap-1 sm:gap-2 md:gap-3` e `px-1 sm:px-2`), garantindo que todos os 5 botões de comando (`Sync`, `Notificações`, `WhatsApp`, `Zerar Painel` e `Conectar Nuvem`) permaneçam 100% visíveis em telas mobile sem qualquer corte lateral.
+2. **Rótulos Adaptativos:** Textos secundários adaptam-se aos breakpoints da tela (`min-[480px]` e `md:`), exibindo botões de ação com ícones bem demarcados no mobile e rótulos expandidos em tablets e desktops.
+
 ---
 
 ## 6. Configuração PWA Manifest & Políticas de Cache
@@ -212,6 +220,16 @@ Quando o usuário menciona explicitamente o destino orçamentário no comando de
 2. **Remoção de Falsos Positivos por Substring:** Eliminação de buscas parciais sem limite de palavra (como a palavra *"gasto"* casando indevidamente com o radical *"gas"* de Energia), garantindo casamento estrito por limites de palavra (`\b`).
 3. **Higienização de Título:** Nomes de pilares (*supérfluo*, *fixo*, *investimento*) e preposições conexas (*como*, *no*, *nas*) são expurgados do título do lançamento, resultando em descrições limpas e profissionais (ex: *"Mercado"*, *"Luz"*, *"CDB"*).
 
+### 8.3 Extração Inteligente de Vencimento e Eliminação de Vencimento Padrão Indevido
+Para garantir que despesas faladas só apareçam no calendário quando o usuário realmente ditar uma data:
+1. **Remoção do Padrão 'Dia 10':** Anteriormente, novos lançamentos sem menção explícita de prazo recebiam `'Dia 10'` por padrão, poluindo o calendário mensal indevidamente. Agora, itens sem menção de data recebem `vencimento: 'A definir'` e não são plotados em nenhum dia do calendário.
+2. **Reconhecimento de Dias Falados (`extrairVencimentoFalado`):**
+   - Identifica dias com prefixo (*"dia 10"*, *"pro dia 5"*, *"vence dia 22"*, *"no dia 8"*).
+   - Identifica números por extenso (*"dia primeiro"*, *"dia quinze"*, *"dia trinta e um"*).
+   - Identifica datas completas (*"15/11/2026"*).
+3. **Desacoplamento de Valor Monetário vs. Dia:** A data é extraída e higienizada do texto antes do cálculo monetário, impedindo que comandos como *"Dia 5 almoço 40"* interpretem o 5 como valor do almoço.
+4. **Proteção nos Motores de Calendário e Notificação:** `CalendarioPlanejamentoMensal`, `whatsappReminderService` e `firebaseNotificationService` filtram estritamente valores `'A definir'`, `'Sem vencimento'` ou strings genéricas, aceitando apenas datas formatadas ou dias explícitos no formato `"Dia X"`.
+
 ---
 
 ## 9. Mecanismo de Limpeza e Reinicialização Total do Painel (`zerarPainel`)
@@ -239,7 +257,11 @@ O componente `CalendarioPlanejamentoMensal` implementa uma visão temporal do fl
    - **Pendente a Vencer:** Montante em aberto aguardando liquidação.
    - **Pico de Vencimentos:** Identificação automática do dia de maior pressão de caixa no mês.
 4. **Inspetor Interativo de Dia:** Ao clicar em qualquer data do mês, abre-se um painel de detalhes permitindo alternar status de pagamento (*pago / pendente*), deletar o item ou realizar o agendamento rápido de um novo lançamento diretamente naquela data.
-5. **Filtros por Pilar e Status:** Filtragem em tempo real por pilar orçamentário (`Todos`, `Fixas`, `Supérfluos`, `Investimentos`) e status de quitação (`Pendentes`, `Quitados`).
+5. **Filtros por Pilar e Status Lado a Lado no Mobile (`no-scrollbar`):** Barra horizontal unificada sem quebra de linha (`flex-nowrap`, `overflow-x-auto no-scrollbar`), com separador sutil entre os pilares 50-30-20 e o status de quitação (Tudo, A Pagar, Pago), mantendo os botões de filtro sempre alinhados lado a lado com rolagem tátil suave em smartphones e distribuição responsiva em desktop.
+6. **Ergonomia e Legibilidade dos Lançamentos no Grid Mobile:**
+   - *Micro-Indicadores de Status (Dots):* Substituição dos ícones volumosos nas mini-pílulas diárias por micro-esferas de 6px (verde para pago, laranja para pendente/supérfluos e branco para fixas), concedendo largura total para a visualização dos nomes das despesas e eliminando abreviações ilegíveis de uma letra.
+   - *Valores Totais Compactos (`formatarTotalDiaCompacto`):* Omissão inteligente de centavos para valores redondos no mobile (ex: `R$ 1.450` em vez de `R$ 1.450,00`), impedindo cortes de dígitos na borda direita das células.
+   - *Otimização de Espaço Útil (+40%):* Redução de paddings do grid (`p-2 sm:p-4`) e das células (`p-1 sm:p-1.5`), maximizando a área de leitura em smartphones.
 
 ---
 
@@ -259,7 +281,7 @@ O subsistema `whatsappReminderService` monitora continuamente todas as despesas 
    - Normaliza telefones brasileiros e internacionais (`55 + DDD + número`).
    - Aciona `https://api.whatsapp.com/send` ou `https://wa.me/` com texto pré-preenchido e codificado via `encodeURIComponent`, compatível com WhatsApp Web no Desktop e aplicativo móvel oficial (Android/iOS).
 4. **Banner de Alerta Ativo (`BannerLembreteWhatsApp`):** Notificação em tempo real no topo do painel quando houver contas a vencer, permitindo envio imediato no WhatsApp com 1 clique para todos os contatos ativos.
-5. **Central de Configuração (`ModalLembretesWhatsApp`):** Interface modal com abas para gerenciamento de contas, cadastro de destinatários e configuração da automação diária.
+5. **Central de Configuração (`ModalLembretesWhatsApp`):** Interface modal com abas para gerenciamento de contas, cadastro de destinatários e configuração da automação diária. As abas utilizam layout responsivo em `grid grid-cols-3` com ícones dedicados (`Bell`, `Users`, `Zap`) e rótulos adaptativos, garantindo que todas as 3 abas caibam 100% visíveis em telas de celular sem barra ou rolagem horizontal.
 
 ### 11.2 Cadastro de Múltiplos Números de WhatsApp (`DestinatarioWhatsApp[]`)
 O sistema suporta cadastro dinâmico de múltiplos números telefônicos para famílias ou casais que compartilham despesas:
@@ -274,3 +296,26 @@ O sistema suporta cadastro dinâmico de múltiplos números telefônicos para fa
    - Realiza o envio automático para todos os números ativos cadastrados.
 2. **Integração com Webhooks e Gateways WhatsApp:**
    - Suporte opcional a endpoint POST REST (ex: Z-API, Evolution API, Baileys ou Supabase Edge Functions) com autenticação Bearer Token, viabilizando disparos 100% silenciosos em background.
+
+---
+
+## 12. Sistema de Autenticação Individual e Isolamento Multi-Usuário
+
+### 12.1 Arquitetura e Engenharia de Acesso (`authService.ts`)
+Para assegurar que cada usuário do aplicativo gerencie seu próprio orçamento com privacidade e integridade absolutas, foi desenvolvida uma camada híbrida de autenticação e isolamento multi-inquilino (*multi-tenant*):
+1. **Modelo Híbrido Resiliente (Supabase Auth + Fallback Local Offline):**
+   - **Autenticação Online via Supabase Auth:** Realiza login e registro seguro com e-mail e senha por meio de `signInWithEmail` e `signUpWithEmail` na nuvem Supabase, emitindo tokens JWT protegidos e mantendo sessão criptografada.
+   - **Fallback Local Autônomo:** Em situações de ausência de conexão à internet ou indisponibilidade da API, o módulo valida e persiste credenciais no `localStorage` sob a chave `gestorlar_usuarios_registrados`, garantindo que o usuário consiga acessar seus dados sem travas ou bloqueios mesmo completamente desconectado.
+2. **Isolamento Estrito de Dados por Usuário (`userId` Scoping):**
+   - Cada usuário autenticado possui um identificador único exclusivo (`user.id` no Supabase ou `usr_${timestamp}_${hash}` no modo local).
+   - O hook primário de armazenamento `useFinanceStorage(userId)` isola a chave de armazenamento local (`gestor_financeiro_pwa_usr_${userId}`), impedindo colisões de dados quando diferentes usuários utilizam o mesmo dispositivo ou navegador.
+   - Todas as operações em nuvem (`carregarDadosNuvem`, `migrarDadosLocaisParaNuvem`, `sincronizarPerfilNuvem`, `sincronizarItemNuvem`, `removerItemNuvem`, `inscreverTempoRealNuvem`) transmitem o `userId` específico, isolando tabelas e canais do Supabase Realtime por inquilino.
+
+### 12.2 Interface de Acesso Factory Terminal (`TelaAutenticacao.tsx`)
+1. **Estética Factory Dark Terminal:** Design integrado com `#101010` (Canvas Obsidian), `#161413` (Container), bordas `#3d3a39`, acento `#ee6018` e tipografia Geist Mono uppercase.
+2. **Modos Entrar e Criar Conta:** Alternância fluida entre login direto e cadastro de novo usuário com confirmação de senha e campo opcional de nome.
+3. **Segurança de Entrada:** Alternador de visibilidade de senha (*Eye/EyeOff*), validação de e-mail sintático, tamanho mínimo de senha e mensagens contextuais de erro e sucesso.
+
+### 12.3 Indicador de Sessão e Encerramento (`HeaderMotorRenda.tsx`)
+1. **Badge do Usuário Ativo:** Exibe o nome ou e-mail do usuário conectado no topo direito da barra de comandos com indicador luminoso de origem (*Nuvem* em verde `#a0ca92` ou *Local* em laranja `#ee6018`).
+2. **Ação Rápida de Logout (`Sair`):** Botão discreto com ícone `LogOut` que encerra a sessão ativa (`fazerLogout`), limpa a sessão local e redireciona de imediato para a tela de autenticação.

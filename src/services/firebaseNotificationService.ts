@@ -260,8 +260,38 @@ export async function escutarNotificacoesPrimeiroPlano(
  */
 function extrairDiaVencimento(vencimento: string): number | null {
   if (!vencimento) return null;
-  const match = vencimento.match(/\b([1-9]|[12][0-9]|3[01])\b/);
-  return match ? parseInt(match[1], 10) : null;
+  const v = vencimento.trim();
+  const vLower = v.toLowerCase();
+
+  if (
+    vLower === 'a definir' ||
+    vLower === 'sem vencimento' ||
+    vLower === 'indefinido' ||
+    vLower === 'não informado' ||
+    vLower === 'nao informado' ||
+    vLower === 'fatura cartão' ||
+    vLower === 'fatura cartao'
+  ) {
+    return null;
+  }
+
+  // 1. Formato ISO: YYYY-MM-DD
+  const matchIso = v.match(/^\d{4}-\d{2}-(\d{2})/);
+  if (matchIso) return parseInt(matchIso[1], 10);
+
+  // 2. Formato Brasileiro: DD/MM/YYYY
+  const matchBr = v.match(/^(\d{1,2})\/\d{1,2}\/\d{4}/);
+  if (matchBr) return parseInt(matchBr[1], 10);
+
+  // 3. Formato com prefixo "Dia X"
+  const matchDiaPrefixo = v.match(/^dia\s*0?([1-9]|[12]\d|3[01])$/i) || v.match(/\bdia\s*0?([1-9]|[12]\d|3[01])\b/i);
+  if (matchDiaPrefixo) return parseInt(matchDiaPrefixo[1], 10);
+
+  // 4. Apenas número do dia
+  const matchApenasDia = v.match(/^0?([1-9]|[12]\d|3[01])$/);
+  if (matchApenasDia) return parseInt(matchApenasDia[1], 10);
+
+  return null;
 }
 
 /**
