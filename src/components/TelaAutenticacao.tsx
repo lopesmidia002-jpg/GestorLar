@@ -70,10 +70,12 @@ export const TelaAutenticacao = ({ onAutenticado }: Props) => {
         {/* Top Header estilo Janela de Terminal macOS */}
         <div className="h-10 bg-[#1d1a18] border-b border-[#3d3a39] px-4 flex items-center justify-between select-none">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#ee6018]" title="Factory Auth System" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
-            <span className="font-mono text-xs uppercase tracking-wider text-[#8a8380] ml-2">
+            <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#ee6018]" title="Factory Auth System" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+            </div>
+            <span className="font-mono text-xs uppercase tracking-wider text-[#8a8380] sm:ml-2">
               FACTORY // AUTH.GATEWAY
             </span>
           </div>

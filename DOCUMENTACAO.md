@@ -257,7 +257,7 @@ O componente `CalendarioPlanejamentoMensal` implementa uma visão temporal do fl
    - **Pendente a Vencer:** Montante em aberto aguardando liquidação.
    - **Pico de Vencimentos:** Identificação automática do dia de maior pressão de caixa no mês.
 4. **Inspetor Interativo e Modal On-Screen do Dia:** Ao clicar em qualquer data que possua compromissos cadastrados (ou no botão *Abrir na Tela*), abre-se imediatamente uma janela modal no centro da tela (`ModalDespesasDia`) com o resumo financeiro daquela data, lista completa dos lançamentos, alternância de status de pagamento (*pago / pendente*), botão de envio de lembrete WhatsApp individual ou consolidado, exclusão com 1 clique e formulário rápido de novos agendamentos.
-5. **Filtros por Pilar e Status 100% Visíveis no Mobile Sem Cortes:** Barra horizontal otimizada onde todos os 7 seletores operacionais (`TODOS`, `FIXAS`, `SUPÉRFLUOS`, `APORTES`, `TUDO`, `A PAGAR`, `PAGO`) aparecem simultaneamente na tela do smartphone sem cortes e sem necessidade de rolagem horizontal, utilizando paddings compactos (`px-1.5 min-[380px]:px-2`), omissão da legenda textual redundante em telas móveis e rótulos responsivos adaptativos para larguras ultra-estreitas.
+5. **Menu de Filtros Responsivo no Mobile:** Em telas móveis (`sm:hidden`), a antiga fileira de 7 botões horizontais comprimidos foi substituída por um **Menu de Filtros** compacto com botão único expansível (`Filter` + resumo do filtro ativo + indicador luminoso + `ChevronDown`). Ao tocar no menu, expande-se um painel organizado em grid (2 colunas para Pilares: Todos, Fixas, Supérfluos, Aportes; e 3 colunas para Status: Tudo, A Pagar, Pago) com botões táteis largos e confortáveis para o polegar, além de opções rápidas para resetar e fechar o menu. Em telas maiores (`>= sm`), a barra horizontal direta permanece ativa para cliques rápidos.
 6. **Ergonomia e Visibilidade Sob Demanda no Mobile:**
    - *Ocultação de Despesas no Grid Mobile:* Em telas móveis (`sm:hidden`), as células do calendário deixam de exibir pílulas de texto e valores que ficavam comprimidos e ilegíveis nas colunas estreitas de ~45px, substituindo-os por micro-dots cromáticos minimalistas indicando a existência de despesas cadastradas (verde para pago, laranja para supérfluo/pendente e branco para fixas).
    - *Abertura Imediata na Tela ao Clicar no Dia:* Ao tocar em qualquer dia com despesas, a célula recebe anel de destaque e o modal com a pauta completa de lançamentos daquela data surge imediatamente na tela, permitindo gerenciar tudo sem necessidade de rolagem ou esforço visual.
@@ -361,3 +361,44 @@ Para assegurar que cada usuário do aplicativo gerencie seu próprio orçamento 
 1. **Foco Estrito no Cadastramento:** O modal foi reformulado para eliminar abas secundárias (`Contas a Vencer` e `Automação Diária`), apresentando diretamente a interface limpa e focada de **Cadastro de Números de WhatsApp**.
 2. **Formulário Ágil:** Cadastro imediato com campos de Identificação/Nome, WhatsApp com DDD e Vínculo (Titular, Cônjuge, Familiar, Outro) com botão de salvar de alta ênfase no padrão Factory.
 3. **Gerenciamento de Destinatários:** Lista clara dos números cadastrados com alternador de ativação/desativação, botão para teste instantâneo de conectividade e exclusão direta.
+
+---
+
+## 16. Otimização Mobile: Ocultação dos Três Pontos de Janela macOS Terminal
+
+### 16.1 Diagnóstico de Ergonomia em Telas Menores
+Nos cabeçalhos dos painéis e cards do padrão Factory Terminal (`HyperWaveCard`, `HyperStarburstCard`, `HyperRadarCard`, `CalendarioPlanejamentoMensal`, `LedgerDespesas`, modais e tela de login), o elemento decorativo clássico de três pontos (`● ● ●` simulando botões de janela macOS) ocupava cerca de 24px a 32px de largura útil horizontal. Em smartphones com telas estreitas (360px a 430px), essa ocupação comprimia os títulos textuais (ex: `WAVE_OSCILLATOR // FLUXO CONTÍNUO`, `SPECTRUM_360`), empurrando badges e textos contra a borda ou forçando quebras indesejadas.
+
+### 16.2 Implementação Responsiva
+1. **Ocultação em Telas Móveis (`hidden sm:flex`):** O container dos 3 pontos foi encapsulado com a classe `hidden sm:flex items-center gap-1.5 shrink-0`, fazendo com que os círculos desapareçam completamente em dispositivos móveis (`< 640px`).
+2. **Preservação em Telas Médias e Desktops (`sm:flex`):** O estilo retrô-terminal característico do Factory Design System permanece intacto em tablets, laptops e desktops onde há espaço horizontal abundante.
+3. **Alinhamento Natural do Título:** O espaçamento à esquerda dos títulos foi parametrizado com `sm:ml-2`, garantindo alinhamento rente à margem esquerda no mobile sem recuos artificiais.
+
+---
+
+## 17. Menu Expansível de Filtros do Calendário no Modo Mobile
+
+### 17.1 Substituição da Fileira de 7 Botões por Menu Tátil
+1. **Problema de Espaço Horizontal:** A exibição simultânea de 7 botões de filtro (`TODOS`, `FIXAS`, `SUPÉRFLUOS`, `APORTES`, `TUDO`, `A PAGAR`, `PAGO`) em uma única linha ultrapassava a largura de smartphones comuns (360px a 400px), causando corte do botão `PAGO` e truncamento de texto (`A PAG...`).
+2. **Botão de Acionamento do Menu (`sm:hidden`):** Na visualização padrão fechada, a barra exibe um botão unificado compacto contendo o ícone `Filter`, o rótulo dos filtros atualmente ativos (ex: `Todos os Pilares • Tudo` ou `Fixas • A Pagar`), indicador de filtro ativo em laranja e seta `ChevronDown` com rotação animada.
+3. **Painel de Seleção em Grid Vertical:**
+   - **Pilares (50-30-20):** Grade de 2 colunas com botões amplos e fáceis de tocar com o polegar.
+   - **Status:** Grade de 3 colunas para `TUDO`, `A PAGAR` e `PAGO`.
+   - **Controles Rápidos:** Links para resetar filtros individuais, botão de "Limpar Filtros" e botão "Fechar Menu".
+4. **Preservação no Desktop:** Telas a partir de 640px (`sm`) mantêm a barra de botões diretos em linha, aproveitando a largura ampla disponível.
+
+---
+
+## 18. Desobstrução da Barra Superior e Visibilidade Total dos Ícones
+
+### 18.1 Diagnóstico de Colisão e Extravasamento
+Na barra de comandos superior persistente (`HeaderMotorRenda.tsx`), a existência de links de âncora textuais centrais (`War Room`, `Pilares 50-30-20`, `Calendário`, `Ledger`, `LATENCY`) ocupava cerca de 580px no centro da navegação. Como o container principal da aplicação possui limite de largura de 1200px (`max-w-[1200px]`), a soma da marcação à esquerda (~180px), dos links centrais (~580px) e do conjunto de 7 botões operacionais à direita (~750px) ultrapassava a largura útil disponível:
+1. **Colisão Frontal:** O texto `GESTOR 50-30-20` colidia diretamente com `WAR ROOM` (`GESTOR 50-30-20WAR ROOM`).
+2. **Corte Lateral à Direita:** Os controles da ponta direita (identificação do usuário e botão `Sair`) eram empurrados para fora da viewport, sendo truncados na borda da tela.
+
+### 18.2 Resolução e Otimização da Navegação
+1. **Remoção dos Links Centrais Obstrutivos:** Expurgo completo dos links redundantes de âncora do centro da barra, liberando toda a extensão central da navegação.
+2. **Exibição 100% Garantida de Todos os Ícones:**
+   - `Sync` (`RefreshCw`), `Notificações` (`Bell`), `WhatsApp` (`MessageSquare`), `Zerar` (`Trash2`), `Reset` (`RotateCcw`), `Conectar Nuvem` (`Database`) e `Usuário / Sair` (`LogOut`).
+   - Espaçamento refinado (`gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5`) e rótulos responsivos adaptativos (`hidden lg:inline`, `hidden sm:inline xl:hidden`).
+   - Todos os ícones e dados de usuário permanecem perfeitamente enquadrados e 100% visíveis em qualquer resolução sem colisões ou cortes.

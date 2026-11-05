@@ -127,10 +127,12 @@ export const LedgerDespesas = ({
       {/* macOS Terminal Window Header */}
       <div className="h-9 bg-[#161413] border-b border-[#3d3a39] px-4 flex items-center justify-between select-none">
         <div className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
-          <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
-          <span className="ml-2 font-mono text-[11px] uppercase tracking-[-0.24px] text-[#eeeeee]">
+          <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+          </div>
+          <span className="sm:ml-2 font-mono text-[11px] uppercase tracking-[-0.24px] text-[#eeeeee]">
             TRANSACTION_LEDGER // DIÁRIO DE LANÇAMENTOS
           </span>
         </div>

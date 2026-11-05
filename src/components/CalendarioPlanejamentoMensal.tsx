@@ -4,6 +4,7 @@ import { formatarBRL, CATEGORIAS_CONFIG, parseMoedaBR } from '../utils/calculati
 import { 
   ChevronLeft, 
   ChevronRight, 
+  ChevronDown,
   Calendar as CalendarIcon, 
   Check, 
   Clock, 
@@ -11,7 +12,8 @@ import {
   Trash2, 
   X, 
   CalendarCheck2,
-  MessageSquare
+  MessageSquare,
+  Filter
 } from 'lucide-react';
 import { 
   dispararWhatsApp, 
@@ -117,6 +119,22 @@ export const CalendarioPlanejamentoMensal = ({
 
   const painelDiaRef = useRef<HTMLDivElement>(null);
   const [modalDiaAberto, setModalDiaAberto] = useState(false);
+  const [menuFiltrosMobileAberto, setMenuFiltrosMobileAberto] = useState(false);
+
+  const rotuloPilarAtual = useMemo(() => {
+    if (filtroPilar === 'fixas') return 'Fixas (50%)';
+    if (filtroPilar === 'superfluos') return 'Supérfluos (30%)';
+    if (filtroPilar === 'investimentos') return 'Aportes (20%)';
+    return 'Todos os Pilares';
+  }, [filtroPilar]);
+
+  const rotuloStatusAtual = useMemo(() => {
+    if (filtroStatus === 'pendentes') return 'A Pagar';
+    if (filtroStatus === 'pagos') return 'Pago';
+    return 'Tudo';
+  }, [filtroStatus]);
+
+  const temFiltroAtivo = filtroPilar !== 'todos' || filtroStatus !== 'todos';
 
   const ano = dataVisualizada.getFullYear();
   const mes = dataVisualizada.getMonth();
@@ -273,10 +291,12 @@ export const CalendarioPlanejamentoMensal = ({
         {/* Terminal Header */}
         <div className="h-9 bg-[#161413] border-b border-[#3d3a39] px-4 flex items-center justify-between select-none">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
-            <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
-            <span className="ml-2 font-mono text-[11px] uppercase tracking-[-0.24px] text-[#eeeeee] flex items-center gap-1.5">
+            <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+            </div>
+            <span className="sm:ml-2 font-mono text-[11px] uppercase tracking-[-0.24px] text-[#eeeeee] flex items-center gap-1.5">
               <CalendarIcon className="w-3.5 h-3.5 text-[#ee6018]" />
               CALENDAR // MONTHLY_PLANNING.SYS
             </span>
@@ -377,88 +397,270 @@ export const CalendarioPlanejamentoMensal = ({
           </div>
         </div>
 
-        {/* 3. Filtros do Calendário */}
-        <div className="px-1.5 min-[380px]:px-2.5 sm:px-6 py-2 sm:py-3 border-b border-[#3d3a39] bg-[#161413] flex items-center justify-between sm:justify-start gap-1 sm:gap-2.5 text-[10px] min-[380px]:text-[11px] sm:text-xs font-mono select-none overflow-x-hidden sm:overflow-x-auto">
-          <div className="flex items-center gap-0.5 min-[380px]:gap-1 sm:gap-1.5 shrink-0">
-            <span className="text-[10px] text-[#8a8380] uppercase mr-1 whitespace-nowrap hidden sm:inline">Filtrar:</span>
+        {/* 3. Filtros do Calendário (Menu no Mobile e Barra de Botões no Desktop) */}
+        <div className="border-b border-[#3d3a39] bg-[#161413] select-none font-mono">
+          {/* 3.1 Mobile (< sm): Menu de Filtros Expansível */}
+          <div className="sm:hidden px-2.5 py-2 flex items-center justify-between gap-2">
             <button
-              onClick={() => setFiltroPilar('todos')}
-              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
-                filtroPilar === 'todos' 
-                  ? 'bg-[#fafafa] text-[#101010] border-[#fafafa]' 
-                  : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
-              }`}
+              type="button"
+              onClick={() => setMenuFiltrosMobileAberto(!menuFiltrosMobileAberto)}
+              className="flex-1 flex items-center justify-between px-3 py-2 rounded-[3px] bg-[#1d1a18] border border-[#3d3a39] hover:border-[#fafafa] text-[#eeeeee] text-xs uppercase tracking-tight transition-colors cursor-pointer"
+              title="Abrir menu de filtros do calendário"
             >
-              TODOS
+              <div className="flex items-center gap-2 truncate">
+                <Filter className="w-3.5 h-3.5 text-[#ee6018] shrink-0" />
+                <span className="text-[#8a8380] text-[11px]">Menu:</span>
+                <span className="text-[#fafafa] font-medium text-[11px] truncate">
+                  {rotuloPilarAtual} • {rotuloStatusAtual}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                {temFiltroAtivo && (
+                  <span className="w-2 h-2 rounded-full bg-[#ee6018]" title="Filtro ativo" />
+                )}
+                <ChevronDown className={`w-4 h-4 text-[#8a8380] transition-transform duration-200 ${menuFiltrosMobileAberto ? 'rotate-180 text-[#fafafa]' : ''}`} />
+              </div>
             </button>
-            <button
-              onClick={() => setFiltroPilar('fixas')}
-              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
-                filtroPilar === 'fixas' 
-                  ? 'bg-[#eeeeee] text-[#101010] border-[#eeeeee]' 
-                  : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
-              }`}
-            >
-              FIXAS
-            </button>
-            <button
-              onClick={() => setFiltroPilar('superfluos')}
-              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
-                filtroPilar === 'superfluos' 
-                  ? 'bg-[#ee6018] text-[#101010] border-[#ee6018]' 
-                  : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
-              }`}
-            >
-              <span className="hidden min-[380px]:inline">SUPÉRFLUOS</span>
-              <span className="min-[380px]:hidden">SUPÉRF.</span>
-            </button>
-            <button
-              onClick={() => setFiltroPilar('investimentos')}
-              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
-                filtroPilar === 'investimentos' 
-                  ? 'bg-[#a0ca92] text-[#101010] border-[#a0ca92]' 
-                  : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
-              }`}
-            >
-              APORTES
-            </button>
+
+            {temFiltroAtivo && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFiltroPilar('todos');
+                  setFiltroStatus('todos');
+                }}
+                className="h-[34px] px-2.5 rounded-[3px] bg-[#1d1a18] border border-[#ee6018]/50 text-[#ee6018] text-[10px] uppercase font-mono tracking-tight shrink-0 flex items-center justify-center hover:bg-[#ee6018]/15 cursor-pointer transition"
+                title="Limpar todos os filtros"
+              >
+                Limpar
+              </button>
+            )}
           </div>
 
-          {/* Divisor vertical sutil entre pilares e status */}
-          <div className="h-3.5 sm:h-4 w-px bg-[#3d3a39] shrink-0 mx-0.5 sm:mx-1" />
+          {/* 3.2 Painel do Menu de Filtros Mobile (Aberto) */}
+          {menuFiltrosMobileAberto && (
+            <div className="sm:hidden px-3.5 py-3 border-t border-[#3d3a39] bg-[#121110] flex flex-col gap-3.5 animate-fadeIn">
+              {/* Seção Pilar */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] text-[#8a8380] uppercase tracking-wider block font-medium">
+                    Pilar Orçamentário (50-30-20):
+                  </span>
+                  {filtroPilar !== 'todos' && (
+                    <button
+                      type="button"
+                      onClick={() => setFiltroPilar('todos')}
+                      className="text-[10px] text-[#ee6018] hover:underline cursor-pointer"
+                    >
+                      Resetar
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setFiltroPilar('todos')}
+                    className={`px-2.5 py-2 rounded-[3px] border text-xs uppercase tracking-tight text-center transition cursor-pointer ${
+                      filtroPilar === 'todos'
+                        ? 'bg-[#fafafa] text-[#101010] border-[#fafafa] font-medium'
+                        : 'bg-[#1d1a18] text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
+                    }`}
+                  >
+                    Todos os Pilares
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFiltroPilar('fixas')}
+                    className={`px-2.5 py-2 rounded-[3px] border text-xs uppercase tracking-tight text-center transition cursor-pointer ${
+                      filtroPilar === 'fixas'
+                        ? 'bg-[#eeeeee] text-[#101010] border-[#eeeeee] font-medium'
+                        : 'bg-[#1d1a18] text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
+                    }`}
+                  >
+                    Fixas (50%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFiltroPilar('superfluos')}
+                    className={`px-2.5 py-2 rounded-[3px] border text-xs uppercase tracking-tight text-center transition cursor-pointer ${
+                      filtroPilar === 'superfluos'
+                        ? 'bg-[#ee6018] text-[#101010] border-[#ee6018] font-medium'
+                        : 'bg-[#1d1a18] text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
+                    }`}
+                  >
+                    Supérfluos (30%)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFiltroPilar('investimentos')}
+                    className={`px-2.5 py-2 rounded-[3px] border text-xs uppercase tracking-tight text-center transition cursor-pointer ${
+                      filtroPilar === 'investimentos'
+                        ? 'bg-[#a0ca92] text-[#101010] border-[#a0ca92] font-medium'
+                        : 'bg-[#1d1a18] text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
+                    }`}
+                  >
+                    Aportes (20%)
+                  </button>
+                </div>
+              </div>
 
-          <div className="flex items-center gap-0.5 min-[380px]:gap-1 sm:gap-1.5 shrink-0">
-            <button
-              onClick={() => setFiltroStatus('todos')}
-              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
-                filtroStatus === 'todos' 
-                  ? 'bg-[#1d1a18] text-[#eeeeee] border-[#fafafa]' 
-                  : 'bg-transparent text-[#8a8380] border-[#3d3a39]'
-              }`}
-            >
-              TUDO
-            </button>
-            <button
-              onClick={() => setFiltroStatus('pendentes')}
-              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
-                filtroStatus === 'pendentes' 
-                  ? 'bg-[#ee6018]/10 text-[#ee6018] border-[#ee6018]' 
-                  : 'bg-transparent text-[#8a8380] border-[#3d3a39]'
-              }`}
-            >
-              <span className="hidden min-[380px]:inline">A PAGAR</span>
-              <span className="min-[380px]:hidden">PEND.</span>
-            </button>
-            <button
-              onClick={() => setFiltroStatus('pagos')}
-              className={`px-1.5 min-[380px]:px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap ${
-                filtroStatus === 'pagos' 
-                  ? 'bg-[#a0ca92]/10 text-[#a0ca92] border-[#a0ca92]' 
-                  : 'bg-transparent text-[#8a8380] border-[#3d3a39]'
-              }`}
-            >
-              PAGO
-            </button>
+              {/* Seção Status */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-[10px] text-[#8a8380] uppercase tracking-wider block font-medium">
+                    Status de Pagamento:
+                  </span>
+                  {filtroStatus !== 'todos' && (
+                    <button
+                      type="button"
+                      onClick={() => setFiltroStatus('todos')}
+                      className="text-[10px] text-[#ee6018] hover:underline cursor-pointer"
+                    >
+                      Resetar
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setFiltroStatus('todos')}
+                    className={`px-2 py-2 rounded-[3px] border text-xs uppercase tracking-tight text-center transition cursor-pointer ${
+                      filtroStatus === 'todos'
+                        ? 'bg-[#fafafa] text-[#101010] border-[#fafafa] font-medium'
+                        : 'bg-[#1d1a18] text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
+                    }`}
+                  >
+                    Tudo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFiltroStatus('pendentes')}
+                    className={`px-2 py-2 rounded-[3px] border text-xs uppercase tracking-tight text-center transition cursor-pointer ${
+                      filtroStatus === 'pendentes'
+                        ? 'bg-[#ee6018] text-[#101010] border-[#ee6018] font-medium'
+                        : 'bg-[#1d1a18] text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
+                    }`}
+                  >
+                    A Pagar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFiltroStatus('pagos')}
+                    className={`px-2 py-2 rounded-[3px] border text-xs uppercase tracking-tight text-center transition cursor-pointer ${
+                      filtroStatus === 'pagos'
+                        ? 'bg-[#a0ca92] text-[#101010] border-[#a0ca92] font-medium'
+                        : 'bg-[#1d1a18] text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
+                    }`}
+                  >
+                    Pago
+                  </button>
+                </div>
+              </div>
+
+              {/* Rodapé do Menu */}
+              <div className="pt-2 border-t border-[#1d1a18] flex items-center justify-between text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFiltroPilar('todos');
+                    setFiltroStatus('todos');
+                  }}
+                  className="text-[#8a8380] hover:text-[#eeeeee] cursor-pointer text-[11px] underline"
+                >
+                  Limpar Filtros
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMenuFiltrosMobileAberto(false)}
+                  className="px-3 py-1 rounded-[3px] bg-[#fafafa] text-[#101010] font-medium text-[11px] uppercase tracking-tight cursor-pointer"
+                >
+                  Fechar Menu
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 3.3 Desktop (>= sm): Barra Horizontal de Botões Rápidos */}
+          <div className="hidden sm:flex px-6 py-2.5 sm:py-3 items-center justify-start gap-2.5 text-xs overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="text-[10px] text-[#8a8380] uppercase mr-1 whitespace-nowrap">Filtrar:</span>
+              <button
+                onClick={() => setFiltroPilar('todos')}
+                className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap cursor-pointer ${
+                  filtroPilar === 'todos' 
+                    ? 'bg-[#fafafa] text-[#101010] border-[#fafafa]' 
+                    : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
+                }`}
+              >
+                TODOS
+              </button>
+              <button
+                onClick={() => setFiltroPilar('fixas')}
+                className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap cursor-pointer ${
+                  filtroPilar === 'fixas' 
+                    ? 'bg-[#eeeeee] text-[#101010] border-[#eeeeee]' 
+                    : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
+                }`}
+              >
+                FIXAS
+              </button>
+              <button
+                onClick={() => setFiltroPilar('superfluos')}
+                className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap cursor-pointer ${
+                  filtroPilar === 'superfluos' 
+                    ? 'bg-[#ee6018] text-[#101010] border-[#ee6018]' 
+                    : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
+                }`}
+              >
+                SUPÉRFLUOS
+              </button>
+              <button
+                onClick={() => setFiltroPilar('investimentos')}
+                className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap cursor-pointer ${
+                  filtroPilar === 'investimentos' 
+                    ? 'bg-[#a0ca92] text-[#101010] border-[#a0ca92]' 
+                    : 'bg-transparent text-[#8a8380] border-[#3d3a39] hover:border-[#8a8380]'
+                }`}
+              >
+                APORTES
+              </button>
+            </div>
+
+            {/* Divisor vertical */}
+            <div className="h-4 w-px bg-[#3d3a39] shrink-0 mx-1" />
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => setFiltroStatus('todos')}
+                className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap cursor-pointer ${
+                  filtroStatus === 'todos' 
+                    ? 'bg-[#1d1a18] text-[#eeeeee] border-[#fafafa]' 
+                    : 'bg-transparent text-[#8a8380] border-[#3d3a39]'
+                }`}
+              >
+                TUDO
+              </button>
+              <button
+                onClick={() => setFiltroStatus('pendentes')}
+                className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap cursor-pointer ${
+                  filtroStatus === 'pendentes' 
+                    ? 'bg-[#ee6018]/10 text-[#ee6018] border-[#ee6018]' 
+                    : 'bg-transparent text-[#8a8380] border-[#3d3a39]'
+                }`}
+              >
+                A PAGAR
+              </button>
+              <button
+                onClick={() => setFiltroStatus('pagos')}
+                className={`px-2 py-0.5 rounded-[3px] border transition whitespace-nowrap cursor-pointer ${
+                  filtroStatus === 'pagos' 
+                    ? 'bg-[#a0ca92]/10 text-[#a0ca92] border-[#a0ca92]' 
+                    : 'bg-transparent text-[#8a8380] border-[#3d3a39]'
+                }`}
+              >
+                PAGO
+              </button>
+            </div>
           </div>
         </div>
 
@@ -866,10 +1068,12 @@ export const CalendarioPlanejamentoMensal = ({
               {/* macOS Window Terminal Header */}
               <div className="h-10 bg-[#1d1a18] border-b border-[#3d3a39] px-4 flex items-center justify-between shrink-0 select-none">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#ee6018]" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
-                  <span className="font-mono text-xs uppercase tracking-wider text-[#8a8380] ml-2 truncate">
+                  <div className="hidden sm:flex items-center gap-1.5 shrink-0">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#ee6018]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#3d3a39]" />
+                  </div>
+                  <span className="font-mono text-xs uppercase tracking-wider text-[#8a8380] sm:ml-2 truncate">
                     CALENDÁRIO // DIA {diaSelecionado.toString().padStart(2, '0')} DE {MESES[mes].toUpperCase()}
                   </span>
                 </div>

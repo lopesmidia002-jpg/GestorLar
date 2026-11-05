@@ -104,34 +104,15 @@ export const HeaderMotorRenda = ({
             <span className="font-mono text-xs uppercase tracking-[0.12em] sm:tracking-[0.2em] text-[#eeeeee] font-normal">
               FACTORY
             </span>
-            <span className="text-[#3d3a39] font-mono text-xs hidden md:inline">/</span>
-            <span className="font-mono text-xs uppercase tracking-tight text-[#8a8380] hidden md:inline">
+            <span className="text-[#3d3a39] font-mono text-xs hidden sm:inline">/</span>
+            <span className="font-mono text-xs uppercase tracking-tight text-[#8a8380] hidden sm:inline">
               GESTOR 50-30-20
             </span>
           </div>
         </div>
 
-        {/* Center / Section Links: Geist 14px 400 uppercase - visível apenas em telas amplas (2xl) com espaço livre */}
-        <div className="hidden 2xl:flex items-center gap-8 text-[13px] font-normal uppercase tracking-tight text-[#8a8380] whitespace-nowrap shrink-0">
-          <a href="#war-room" className="text-[#eeeeee] hover:text-[#fafafa] transition-colors whitespace-nowrap">
-            War Room
-          </a>
-          <a href="#pilares" className="hover:text-[#eeeeee] transition-colors whitespace-nowrap">
-            Pilares 50-30-20
-          </a>
-          <a href="#calendario" className="hover:text-[#eeeeee] transition-colors whitespace-nowrap">
-            Calendário
-          </a>
-          <a href="#ledger" className="hover:text-[#eeeeee] transition-colors whitespace-nowrap">
-            Ledger
-          </a>
-          <span className="text-[11px] font-mono text-[#4d4947] tracking-widest whitespace-nowrap">
-            LATENCY: 0MS LOCAL
-          </span>
-        </div>
-
         {/* Right Actions: Ghost Link, Sync Pulse, High-Emphasis Light Button */}
-        <div className="flex items-center gap-1 sm:gap-2 md:gap-3 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 lg:gap-2.5 shrink-0">
           {/* Sync Trigger & State */}
           <div className="relative">
             <button
@@ -140,7 +121,7 @@ export const HeaderMotorRenda = ({
               title="Disparar sincronização com a nuvem"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${statusSync === 'sincronizando' ? 'animate-spin text-[#ee6018]' : ''}`} />
-              <span className="hidden md:inline">
+              <span className="hidden lg:inline">
                 {statusSync === 'conectado' && 'Sync OK'}
                 {statusSync === 'sincronizando' && 'Syncing...'}
                 {statusSync === 'local_only' && 'Sync Local'}
@@ -178,7 +159,7 @@ export const HeaderMotorRenda = ({
               title="Cadastrar e gerenciar números de WhatsApp"
             >
               <MessageSquare className="w-3.5 h-3.5 text-[#25D366]" />
-              <span className="hidden md:inline">WhatsApp</span>
+              <span className="hidden lg:inline">WhatsApp</span>
             </button>
           )}
 
@@ -190,7 +171,7 @@ export const HeaderMotorRenda = ({
               title="Zerar todos os dados do painel"
             >
               <Trash2 className="w-3.5 h-3.5 text-[#ee6018]" />
-              <span className="hidden min-[480px]:inline">Zerar</span>
+              <span className="hidden lg:inline">Zerar</span>
             </button>
           )}
 
@@ -201,29 +182,29 @@ export const HeaderMotorRenda = ({
                 onRedefinir();
               }
             }}
-            className="h-[34px] px-2.5 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#fafafa] text-[#8a8380] hover:text-[#eeeeee] font-mono text-xs uppercase cursor-pointer hidden md:flex items-center gap-1.5"
+            className="h-[34px] px-2 sm:px-2.5 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#fafafa] text-[#8a8380] hover:text-[#eeeeee] font-mono text-xs uppercase cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
             title="Restaurar dados iniciais"
           >
             <RotateCcw className="w-3 h-3" />
-            <span>Reset</span>
+            <span className="hidden xl:inline">Reset</span>
           </button>
 
           {/* Log In / Conectar Nuvem: High-Emphasis Light Button (#fafafa fill, 3px radius, #101010 text) */}
           <button
             onClick={onAbrirNuvem}
-            className="h-[34px] px-2.5 sm:px-3 md:px-3.5 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] font-normal text-xs uppercase tracking-tight flex items-center justify-center gap-1.5 cursor-pointer font-mono shrink-0"
+            className="h-[34px] px-2.5 sm:px-3 rounded-[3px] bg-[#fafafa] hover:bg-[#eeeeee] text-[#101010] font-normal text-xs uppercase tracking-tight flex items-center justify-center gap-1.5 cursor-pointer font-mono shrink-0"
             title="Conectar ou sincronizar conta de nuvem"
           >
             <Database className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden min-[480px]:inline md:hidden">Nuvem</span>
-            <span className="hidden md:inline">Conectar Nuvem</span>
+            <span className="hidden sm:inline xl:hidden">Nuvem</span>
+            <span className="hidden xl:inline">Conectar Nuvem</span>
           </button>
 
           {/* Usuário Autenticado & Botão Sair */}
           {usuario && (
             <div className="flex items-center gap-1.5 sm:gap-2 pl-1 sm:pl-2 border-l border-[#3d3a39] shrink-0">
-              <div className="hidden min-[640px]:flex flex-col text-right leading-tight select-none">
-                <span className="font-mono text-xs text-[#eeeeee] font-medium max-w-[120px] truncate" title={usuario.nome || usuario.email}>
+              <div className="hidden sm:flex flex-col text-right leading-tight select-none">
+                <span className="font-mono text-xs text-[#eeeeee] font-medium max-w-[100px] md:max-w-[120px] truncate" title={usuario.nome || usuario.email}>
                   {usuario.nome || usuario.email.split('@')[0]}
                 </span>
                 <span className="font-mono text-[9px] text-[#8a8380] uppercase tracking-wider flex items-center justify-end gap-1">
