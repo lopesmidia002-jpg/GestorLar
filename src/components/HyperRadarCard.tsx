@@ -100,32 +100,35 @@ export const HyperRadarCard = ({
       {/* Top Metric Row: 3 Columns with 1px #1d1a18 dividers */}
       <div className="grid grid-cols-1 sm:grid-cols-3 border-b border-[#1d1a18]">
         {/* Metric 1: Semanal */}
-        <div className="p-5 border-b sm:border-b-0 sm:border-r border-[#1d1a18]">
+        <div className="px-3.5 py-3 sm:px-4 sm:py-3.5 border-b sm:border-b-0 sm:border-r border-[#1d1a18] min-w-0">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0]">
+            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0] truncate">
               Saldo Semanal
             </span>
-            <span className="font-mono text-[11px] text-[#a0ca92]">↑ 19.6%</span>
+            <span className="font-mono text-[11px] text-[#a0ca92] shrink-0">↑ 19.6%</span>
           </div>
-          <div className="text-[28px] font-normal tracking-[-1.12px] leading-tight font-geist text-[#eeeeee]">
+          <div 
+            className="text-base sm:text-lg lg:text-[19px] xl:text-[21px] font-normal tracking-[-0.5px] leading-tight font-geist text-[#eeeeee] truncate"
+            title={formatarBRL(calculos.saldoLivre / 4.3)}
+          >
             {formatarBRL(calculos.saldoLivre / 4.3)}
           </div>
-          <span className="text-[11px] text-[#8a8380] font-mono">
+          <span className="text-[11px] text-[#8a8380] font-mono truncate block">
             vs semana anterior
           </span>
         </div>
 
         {/* Metric 2: Mensal Consolidado */}
-        <div className="p-5 border-b sm:border-b-0 sm:border-r border-[#1d1a18]">
+        <div className="px-3.5 py-3 sm:px-4 sm:py-3.5 border-b sm:border-b-0 sm:border-r border-[#1d1a18] min-w-0">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0]">
+            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0] truncate">
               Despesas Mensais
             </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ee6018]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ee6018] shrink-0" />
           </div>
           {editandoMensal ? (
-            <div className="flex items-center gap-1 my-1">
-              <span className="text-xs font-mono text-[#8a8380]">R$</span>
+            <div className="flex items-center gap-1 my-1 min-w-0">
+              <span className="text-xs font-mono text-[#8a8380] shrink-0">R$</span>
               <input
                 type="text"
                 value={tempMensalValor}
@@ -139,7 +142,7 @@ export const HyperRadarCard = ({
                   if (e.key === 'Escape') setEditandoMensal(false);
                 }}
                 autoFocus
-                className="w-24 bg-[#1d1a18] border border-[#eeeeee] rounded-[3px] p-1 text-sm font-mono text-[#eeeeee] focus:outline-none"
+                className="w-full max-w-[90px] bg-[#1d1a18] border border-[#eeeeee] rounded-[3px] p-1 text-xs sm:text-sm font-mono text-[#eeeeee] focus:outline-none min-w-0"
               />
               <button
                 onClick={() => {
@@ -147,11 +150,11 @@ export const HyperRadarCard = ({
                   if (num >= 0 && onAjustarTotalGeral) onAjustarTotalGeral(num);
                   setEditandoMensal(false);
                 }}
-                className="p-1 rounded-[3px] bg-[#fafafa] text-[#101010]"
+                className="p-1 rounded-[3px] bg-[#fafafa] text-[#101010] shrink-0 cursor-pointer"
               >
                 <Check className="w-3 h-3" />
               </button>
-              <button onClick={() => setEditandoMensal(false)} className="p-1 rounded-[3px] bg-[#1d1a18] text-[#8a8380]">
+              <button onClick={() => setEditandoMensal(false)} className="p-1 rounded-[3px] bg-[#1d1a18] text-[#8a8380] shrink-0 cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </div>
@@ -161,14 +164,19 @@ export const HyperRadarCard = ({
                 setTempMensalValor(calculos.totalGastos.toString());
                 setEditandoMensal(true);
               }}
-              className="cursor-pointer group"
+              className="cursor-pointer group min-w-0"
               title="Clique para editar despesas mensais consolidadas"
             >
-              <div className="text-[28px] font-normal tracking-[-1.12px] leading-tight font-geist text-[#eeeeee] group-hover:text-[#fafafa] flex items-baseline justify-between">
-                <span>{formatarBRL(calculos.totalGastos)}</span>
-                <Edit2 className="w-3 h-3 text-[#4d4947] group-hover:text-[#eeeeee]" />
+              <div className="flex items-baseline justify-between gap-1 min-w-0">
+                <span 
+                  className="text-base sm:text-lg lg:text-[19px] xl:text-[21px] font-normal tracking-[-0.5px] leading-tight font-geist text-[#eeeeee] group-hover:text-[#fafafa] truncate"
+                  title={formatarBRL(calculos.totalGastos)}
+                >
+                  {formatarBRL(calculos.totalGastos)}
+                </span>
+                <Edit2 className="w-3 h-3 text-[#4d4947] group-hover:text-[#eeeeee] shrink-0 opacity-70 group-hover:opacity-100 transition-opacity ml-1" />
               </div>
-              <span className="text-[11px] text-[#8a8380] font-mono">
+              <span className="text-[11px] text-[#8a8380] font-mono truncate block">
                 despesas consolidadas
               </span>
             </div>
@@ -176,12 +184,12 @@ export const HyperRadarCard = ({
         </div>
 
         {/* Metric 3: Capacidade Anual */}
-        <div className="p-5">
+        <div className="px-3.5 py-3 sm:px-4 sm:py-3.5 min-w-0">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0]">
+            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0] truncate">
               Capacidade Anual
             </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#a0ca92]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#a0ca92] shrink-0" />
           </div>
           <div 
             onClick={() => {
@@ -190,14 +198,19 @@ export const HyperRadarCard = ({
                 setEditandoCentro(true);
               }
             }}
-            className="cursor-pointer group"
+            className="cursor-pointer group min-w-0"
             title="Clique para editar renda"
           >
-            <div className="text-[28px] font-normal tracking-[-1.12px] leading-tight font-geist text-[#eeeeee] group-hover:text-[#fafafa] flex items-baseline justify-between">
-              <span>{formatarBRL(rendaFamiliar * 12)}</span>
-              <Edit2 className="w-3 h-3 text-[#4d4947] group-hover:text-[#eeeeee]" />
+            <div className="flex items-baseline justify-between gap-1 min-w-0">
+              <span 
+                className="text-base sm:text-lg lg:text-[19px] xl:text-[21px] font-normal tracking-[-0.5px] leading-tight font-geist text-[#eeeeee] group-hover:text-[#fafafa] truncate"
+                title={formatarBRL(rendaFamiliar * 12)}
+              >
+                {formatarBRL(rendaFamiliar * 12)}
+              </span>
+              <Edit2 className="w-3 h-3 text-[#4d4947] group-hover:text-[#eeeeee] shrink-0 opacity-70 group-hover:opacity-100 transition-opacity ml-1" />
             </div>
-            <span className="text-[11px] text-[#8a8380] font-mono">
+            <span className="text-[11px] text-[#8a8380] font-mono truncate block">
               renda líquida 12M
             </span>
           </div>

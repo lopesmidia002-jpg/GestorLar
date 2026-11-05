@@ -103,17 +103,20 @@ export const HyperStarburstCard = ({
         {/* Left Column: KPIs & Legend (6 colunas) */}
         <div className="md:col-span-6 flex flex-col gap-5">
           {/* KPI Semanal */}
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center justify-between text-xs mb-1">
-              <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0]">
+              <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0] truncate">
                 Média Semanal
               </span>
-              <span className="font-mono text-[11px] text-[#a0ca92]">↑ 19.6%</span>
+              <span className="font-mono text-[11px] text-[#a0ca92] shrink-0">↑ 19.6%</span>
             </div>
-            <div className="text-[32px] font-normal tracking-[-1.12px] leading-tight font-geist text-[#eeeeee]">
+            <div 
+              className="text-2xl sm:text-3xl font-normal tracking-[-1px] leading-tight font-geist text-[#eeeeee] truncate"
+              title={formatarBRL(rendaFamiliar / 4.3)}
+            >
               {formatarBRL(rendaFamiliar / 4.3)}
             </div>
-            <span className="text-[11px] text-[#8a8380] font-mono">
+            <span className="text-[11px] text-[#8a8380] font-mono truncate block">
               vs base estimada mensal
             </span>
           </div>

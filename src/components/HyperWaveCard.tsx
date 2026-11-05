@@ -80,17 +80,17 @@ export const HyperWaveCard = ({
       {/* Metric Tiles Header */}
       <div className="grid grid-cols-2 border-b border-[#1d1a18]">
         {/* Metric 1: Mensal Livre */}
-        <div className="p-5 border-r border-[#1d1a18]">
+        <div className="px-3.5 py-3 sm:px-4 sm:py-3.5 border-r border-[#1d1a18] min-w-0">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0]">
+            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0] truncate">
               Saldo Mensal
             </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#a0ca92]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#a0ca92] shrink-0" />
           </div>
 
           {editandoRenda ? (
-            <div className="flex items-center gap-1 my-1">
-              <span className="text-xs font-mono text-[#8a8380]">R$</span>
+            <div className="flex items-center gap-1 my-1 min-w-0">
+              <span className="text-xs font-mono text-[#8a8380] shrink-0">R$</span>
               <input
                 type="text"
                 value={tempRenda}
@@ -104,7 +104,7 @@ export const HyperWaveCard = ({
                   if (e.key === 'Escape') setEditandoRenda(false);
                 }}
                 autoFocus
-                className="w-24 bg-[#1d1a18] border border-[#eeeeee] rounded-[3px] p-1 text-sm font-mono text-[#eeeeee] focus:outline-none"
+                className="w-full max-w-[90px] bg-[#1d1a18] border border-[#eeeeee] rounded-[3px] p-1 text-xs sm:text-sm font-mono text-[#eeeeee] focus:outline-none min-w-0"
               />
               <button
                 onClick={() => {
@@ -112,11 +112,11 @@ export const HyperWaveCard = ({
                   if (num >= 0 && onAtualizarRenda) onAtualizarRenda(num);
                   setEditandoRenda(false);
                 }}
-                className="p-1 rounded-[3px] bg-[#fafafa] text-[#101010]"
+                className="p-1 rounded-[3px] bg-[#fafafa] text-[#101010] shrink-0 cursor-pointer"
               >
                 <Check className="w-3 h-3" />
               </button>
-              <button onClick={() => setEditandoRenda(false)} className="p-1 rounded-[3px] bg-[#1d1a18] text-[#8a8380]">
+              <button onClick={() => setEditandoRenda(false)} className="p-1 rounded-[3px] bg-[#1d1a18] text-[#8a8380] shrink-0 cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </div>
@@ -128,14 +128,19 @@ export const HyperWaveCard = ({
                   setEditandoRenda(true);
                 }
               }}
-              className="cursor-pointer group"
+              className="cursor-pointer group min-w-0"
               title="Clique para editar renda familiar base"
             >
-              <div className="text-[28px] font-normal tracking-[-1.12px] leading-tight font-geist text-[#eeeeee] group-hover:text-[#fafafa] flex items-baseline justify-between">
-                <span>{formatarBRL(calculos.saldoLivre)}</span>
-                <Edit2 className="w-3 h-3 text-[#4d4947] group-hover:text-[#eeeeee]" />
+              <div className="flex items-baseline justify-between gap-1 min-w-0">
+                <span 
+                  className="text-base sm:text-lg lg:text-[19px] xl:text-[21px] font-normal tracking-[-0.5px] leading-tight font-geist text-[#eeeeee] group-hover:text-[#fafafa] truncate"
+                  title={formatarBRL(calculos.saldoLivre)}
+                >
+                  {formatarBRL(calculos.saldoLivre)}
+                </span>
+                <Edit2 className="w-3 h-3 text-[#4d4947] group-hover:text-[#eeeeee] shrink-0 opacity-70 group-hover:opacity-100 transition-opacity ml-1" />
               </div>
-              <div className="text-[11px] font-mono text-[#8a8380] mt-1">
+              <div className="text-[11px] font-mono text-[#8a8380] mt-1 truncate">
                 Livre: <span className="text-[#a0ca92]">{formatarPercentual(100 - calculos.taxaComprometimento)}</span>
               </div>
             </div>
@@ -143,17 +148,17 @@ export const HyperWaveCard = ({
         </div>
 
         {/* Metric 2: Projeção Anual */}
-        <div className="p-5">
+        <div className="px-3.5 py-3 sm:px-4 sm:py-3.5 min-w-0">
           <div className="flex items-center justify-between text-xs mb-1">
-            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0]">
+            <span className="font-mono text-[11px] uppercase tracking-[-0.24px] text-[#b8b3b0] truncate">
               Projeção 12M
             </span>
-            <span className="w-1.5 h-1.5 rounded-full bg-[#ee6018]" />
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ee6018] shrink-0" />
           </div>
 
           {editandoAporte ? (
-            <div className="flex items-center gap-1 my-1">
-              <span className="text-xs font-mono text-[#8a8380]">R$</span>
+            <div className="flex items-center gap-1 my-1 min-w-0">
+              <span className="text-xs font-mono text-[#8a8380] shrink-0">R$</span>
               <input
                 type="text"
                 value={tempAporte}
@@ -167,7 +172,7 @@ export const HyperWaveCard = ({
                   if (e.key === 'Escape') setEditandoAporte(false);
                 }}
                 autoFocus
-                className="w-24 bg-[#1d1a18] border border-[#eeeeee] rounded-[3px] p-1 text-sm font-mono text-[#eeeeee] focus:outline-none"
+                className="w-full max-w-[90px] bg-[#1d1a18] border border-[#eeeeee] rounded-[3px] p-1 text-xs sm:text-sm font-mono text-[#eeeeee] focus:outline-none min-w-0"
               />
               <button
                 onClick={() => {
@@ -175,11 +180,11 @@ export const HyperWaveCard = ({
                   if (num >= 0 && onAjustarTotalPilar) onAjustarTotalPilar('investimentos', num);
                   setEditandoAporte(false);
                 }}
-                className="p-1 rounded-[3px] bg-[#fafafa] text-[#101010]"
+                className="p-1 rounded-[3px] bg-[#fafafa] text-[#101010] shrink-0 cursor-pointer"
               >
                 <Check className="w-3 h-3" />
               </button>
-              <button onClick={() => setEditandoAporte(false)} className="p-1 rounded-[3px] bg-[#1d1a18] text-[#8a8380]">
+              <button onClick={() => setEditandoAporte(false)} className="p-1 rounded-[3px] bg-[#1d1a18] text-[#8a8380] shrink-0 cursor-pointer">
                 <X className="w-3 h-3" />
               </button>
             </div>
@@ -191,14 +196,19 @@ export const HyperWaveCard = ({
                   setEditandoAporte(true);
                 }
               }}
-              className="cursor-pointer group"
+              className="cursor-pointer group min-w-0"
               title="Clique para editar aporte e recalcular a projeção"
             >
-              <div className="text-[28px] font-normal tracking-[-1.12px] leading-tight font-geist text-[#eeeeee] group-hover:text-[#fafafa] flex items-baseline justify-between">
-                <span>{formatarBRL(calculos.totalInvestimentos * 12)}</span>
-                <Edit2 className="w-3 h-3 text-[#4d4947] group-hover:text-[#eeeeee]" />
+              <div className="flex items-baseline justify-between gap-1 min-w-0">
+                <span 
+                  className="text-base sm:text-lg lg:text-[19px] xl:text-[21px] font-normal tracking-[-0.5px] leading-tight font-geist text-[#eeeeee] group-hover:text-[#fafafa] truncate"
+                  title={formatarBRL(calculos.totalInvestimentos * 12)}
+                >
+                  {formatarBRL(calculos.totalInvestimentos * 12)}
+                </span>
+                <Edit2 className="w-3 h-3 text-[#4d4947] group-hover:text-[#eeeeee] shrink-0 opacity-70 group-hover:opacity-100 transition-opacity ml-1" />
               </div>
-              <div className="text-[11px] font-mono text-[#8a8380] mt-1">
+              <div className="text-[11px] font-mono text-[#8a8380] mt-1 truncate" title={`Aporte: ${formatarBRL(calculos.totalInvestimentos)}/mês`}>
                 Aporte: <span className="text-[#eeeeee]">{formatarBRL(calculos.totalInvestimentos)}/mês</span>
               </div>
             </div>

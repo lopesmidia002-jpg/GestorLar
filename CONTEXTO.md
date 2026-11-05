@@ -118,3 +118,9 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
 - **Arquitetura Híbrida Resiliente:** Integração primária com o Supabase Auth para sincronização segura em nuvem e persistência secundária local (`localStorage`), permitindo que contas registradas continuem operando mesmo quando o dispositivo estiver 100% offline.
 - **Perfil Ativo e Logout no Cabeçalho:** O componente `HeaderMotorRenda` exibe o usuário logado com indicador de conectividade e botão imediato de logout (*Sair*), retornando à tela de autenticação e protegendo os dados locais.
 
+---
+
+## 12. Enquadramento e Anti-Overflow de Métricas no War Room
+- **Contenção Estrita nos Banners de Métricas:** Ajuste nos cards da suíte vetorial 60 FPS (`HyperWaveCard`, `HyperRadarCard`, `HyperStarburstCard`) com tipografia adaptativa (`text-base sm:text-lg lg:text-[19px] xl:text-[21px]`), `truncate` nos valores monetários, `shrink-0` nos botões de edição inline e `min-w-0` nas colunas de grid.
+- **Eliminação de Vazamento Visual:** Valores monetários volumosos (ex: `R$ 30.000,00` no bloco de *Projeção 12M*) permanecem perfeitamente alinhados e contidos dentro dos limites do card, sem encostar ou vazar pela borda direita em nenhuma resolução de tela.
+

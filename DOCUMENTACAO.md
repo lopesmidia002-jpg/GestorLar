@@ -319,3 +319,19 @@ Para assegurar que cada usuário do aplicativo gerencie seu próprio orçamento 
 ### 12.3 Indicador de Sessão e Encerramento (`HeaderMotorRenda.tsx`)
 1. **Badge do Usuário Ativo:** Exibe o nome ou e-mail do usuário conectado no topo direito da barra de comandos com indicador luminoso de origem (*Nuvem* em verde `#a0ca92` ou *Local* em laranja `#ee6018`).
 2. **Ação Rápida de Logout (`Sair`):** Botão discreto com ícone `LogOut` que encerra a sessão ativa (`fazerLogout`), limpa a sessão local e redireciona de imediato para a tela de autenticação.
+
+---
+
+## 13. Enquadramento e Anti-Overflow de Métricas no War Room
+
+### 13.1 Otimização de Densidade e Contenção Estrita (`HyperWaveCard`)
+1. **Eliminação de Vazamento Numérico:** Correção do estouro visual onde valores monetários extensos (ex: `R$ 30.000,00` na *Projeção 12M*) ultrapassavam a borda direita do container no banner superior.
+2. **Escala Tipográfica Fluida e Truncamento Seguro:**
+   - Redimensionamento adaptativo (`text-base sm:text-lg lg:text-[19px] xl:text-[21px]`) em substituição ao valor estático de 28px.
+   - Aplicação de `truncate` com tooltip acessível (`title={formatarBRL(...)}`) para garantir que mesmo números de 7 ou 8 dígitos nunca rompam as bordas do card.
+   - Aplicação de `min-w-0` em todas as colunas do grid CSS e containers flexíveis, eliminando o comportamento padrão do CSS Grid que impede células de encolherem abaixo da largura intrínseca do conteúdo.
+3. **Paddings Proporcionais e Ícones com Shrink-0:**
+   - Ajuste dos paddings para `px-3.5 py-3 sm:px-4 sm:py-3.5` (liberando +16px de largura útil por coluna).
+   - Fixação de `shrink-0` nos botões de edição inline (`Edit2`) para evitar compressão contra o texto monetário.
+4. **Alinhamento Harmônico nos Demais Cards (`HyperRadarCard` e `HyperStarburstCard`):**
+   - Padronização idêntica de contenção, `min-w-0` e tipografia adaptativa em todos os cards da suíte vetorial do War Room.
