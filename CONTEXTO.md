@@ -97,18 +97,14 @@ A aplicação foi concebida para permitir expansão modular direta no ecossistem
 
 ---
 
-## 10. Central de Lembretes de Vencimento via WhatsApp
-- **Detecção Inteligente de Prazos:** Varredura automática das despesas não pagas, calculando prazos para contas que vencem no dia, dentro da janela configurada (1 a 7 dias de antecedência) ou atrasadas.
-- **Mensagem Formatada Profissional:** Resumo com emojis, listas de itens, valores e totalizadores, pronto para envio no WhatsApp Web ou App móvel.
-- **Disparos em Múltiplos Pontos de Contato:**
-  - Banner dinâmico no topo do painel com botão de disparo imediato.
-  - Botão WhatsApp com contador de pendências no cabeçalho persistente.
-  - Ícone de envio direto em cada linha do Ledger e em cada card de conta do Calendário Mensal.
-  - Respostas no Assistente Copilot para consultas por voz e texto sobre contas a vencer.
-- **Persistência de Preferências:** Salva número de telefone e parâmetros de antecedência no `localStorage`.
-- **Múltiplos Números Cadastrados:** Gerenciamento de múltiplos contatos da família (Cônjuge, Titular, Familiar) com ativação independente para recebimento de alertas.
-- **Abas Responsivas Sem Scroll Horizontal:** No modal de lembretes, a navegação entre abas adota grid simétrico de 3 colunas com ícones dedicados e rótulos adaptativos, garantindo visibilidade total em qualquer largura de smartphone.
-- **Automação Diária Inteligente:** Rotina que monitora as datas de vencimento e efetua o disparo automático diário para todos os contatos ativos sem repetições no mesmo dia, com suporte opcional a Webhooks e gateways REST WhatsApp para envio 100% silencioso.
+## 10. Cadastramento de Números de WhatsApp e Ocultação de Alertas
+- **Ocultação de Alertas Intrusivos:** O banner superior de alertas de vencimento (`BannerLembreteWhatsApp`) e os contadores de alerta numérico na barra de comandos foram removidos da interface visual, eliminando avisos desnecessários e mantendo o foco total nos dados financeiros.
+- **Central Exclusiva de Cadastramento de Números:** O modal de WhatsApp agora é 100% dedicado ao gerenciamento de contatos, permitindo:
+  - Cadastro rápido de telefones (Nome/Identificação, DDD + Número e Vínculo: Titular, Cônjuge, Familiar, Outro).
+  - Ativação ou desativação individual de cada número.
+  - Envio de mensagem de teste para validação imediata do contato no WhatsApp.
+  - Remoção simples com 1 clique.
+- **Interface Focada no Padrão Factory:** Layout limpo sem abas secundárias desnecessárias, com feedback sutil de sucesso e tipografia mono compacta.
 
 ---
 

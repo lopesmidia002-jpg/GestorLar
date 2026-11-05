@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useFinanceStorage } from './hooks/useFinanceStorage';
 import { HeaderMotorRenda } from './components/HeaderMotorRenda';
 import { HyperWaveCard } from './components/HyperWaveCard';
@@ -11,7 +11,6 @@ import { FinancialAssistantBot } from './components/FinancialAssistantBot';
 import { ModalNotificacoesFirebase } from './components/ModalNotificacoesFirebase';
 import { ModalConexaoNuvem } from './components/ModalConexaoNuvem';
 import { ModalZerarPainel } from './components/ModalZerarPainel';
-import { BannerLembreteWhatsApp } from './components/BannerLembreteWhatsApp';
 import { ModalLembretesWhatsApp } from './components/ModalLembretesWhatsApp';
 import { TelaAutenticacao } from './components/TelaAutenticacao';
 import {
@@ -19,11 +18,6 @@ import {
   fazerLogout,
   type UsuarioLogado
 } from './services/authService';
-import {
-  obterConfiguracaoWhatsApp,
-  analisarContasParaLembrete,
-  executarDisparoAutomaticoSeNecessario
-} from './services/whatsappReminderService';
 import {
   executarVerificacaoGlobalENotificar,
   escutarNotificacoesPrimeiroPlano
@@ -84,10 +78,6 @@ export function App() {
   const [modalZerarAberto, setModalZerarAberto] = useState(false);
   const [modalWhatsAppAberto, setModalWhatsAppAberto] = useState(false);
 
-  // Monitora configuração e contas próximas a vencer para lembretes de WhatsApp
-  const configWhatsApp = useMemo(() => obterConfiguracaoWhatsApp(), [modalWhatsAppAberto]);
-  const resumoWhatsApp = useMemo(() => analisarContasParaLembrete(estado.itens, configWhatsApp), [estado.itens, configWhatsApp]);
-
   // Monitora contas vencendo, risco de saldo negativo e escuta mensagens push em primeiro plano
   useEffect(() => {
     if (!usuario) return;
@@ -104,18 +94,6 @@ export function App() {
       if (cancelar) cancelar();
     };
   }, [estado, calculos, usuario]);
-
-  // Automação diária de alertas no WhatsApp para os números cadastrados
-  useEffect(() => {
-    if (!usuario) return;
-    if (estado.itens.length > 0) {
-      executarDisparoAutomaticoSeNecessario(estado.itens).then((res) => {
-        if (res.disparado) {
-          console.log(`[WhatsApp Auto-Dispatch] Alerta disparado para ${res.totalDestinatarios} número(s) cadastrado(s) com ${res.totalContas} conta(s).`);
-        }
-      });
-    }
-  }, [estado.itens, usuario]);
 
   // Exportar backup JSON
   const exportarJSON = () => {
@@ -155,19 +133,11 @@ export function App() {
           onSincronizar={forcarSincronizacao}
           onAbrirNotificacoes={() => setModalNotificacoesAberto(true)}
           onAbrirWhatsApp={() => setModalWhatsAppAberto(true)}
-          totalLembretesWhatsApp={resumoWhatsApp.todasNotificaveis.length}
           onAbrirNuvem={() => setModalNuvemAberto(true)}
           onAtualizarRenda={atualizarRenda}
           onAjustarTotalGeral={ajustarTotalGeral}
           onRedefinir={redefinirDadosPadrao}
           onAbrirZerarPainel={() => setModalZerarAberto(true)}
-        />
-
-        {/* 1.1 Banner de Lembrete WhatsApp para Contas a Vencer */}
-        <BannerLembreteWhatsApp
-          resumo={resumoWhatsApp}
-          config={configWhatsApp}
-          onAbrirConfiguracoes={() => setModalWhatsAppAberto(true)}
         />
 
         {/* 2. WAR ROOM: SUITE HYPER CHARTS 60 FPS */}
@@ -332,12 +302,10 @@ export function App() {
         onRestaurarDemo={redefinirDadosPadrao}
       />
 
-      {/* 10. Modal de Lembretes de Vencimento no WhatsApp */}
+      {/* 10. Modal de Cadastramento de Números de WhatsApp */}
       <ModalLembretesWhatsApp
         aberto={modalWhatsAppAberto}
         onFechar={() => setModalWhatsAppAberto(false)}
-        itens={estado.itens}
-        onAlternarPago={alternarPago}
       />
     </div>
   );

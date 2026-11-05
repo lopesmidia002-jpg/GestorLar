@@ -279,22 +279,14 @@ O subsistema `whatsappReminderService` monitora continuamente todas as despesas 
 3. **Disparo Direto para API do WhatsApp:**
    - Normaliza telefones brasileiros e internacionais (`55 + DDD + número`).
    - Aciona `https://api.whatsapp.com/send` ou `https://wa.me/` com texto pré-preenchido e codificado via `encodeURIComponent`, compatível com WhatsApp Web no Desktop e aplicativo móvel oficial (Android/iOS).
-4. **Banner de Alerta Ativo (`BannerLembreteWhatsApp`):** Notificação em tempo real no topo do painel quando houver contas a vencer, permitindo envio imediato no WhatsApp com 1 clique para todos os contatos ativos.
-5. **Central de Configuração (`ModalLembretesWhatsApp`):** Interface modal com abas para gerenciamento de contas, cadastro de destinatários e configuração da automação diária. As abas utilizam layout responsivo em `grid grid-cols-3` com ícones dedicados (`Bell`, `Users`, `Zap`) e rótulos adaptativos, garantindo que todas as 3 abas caibam 100% visíveis em telas de celular sem barra ou rolagem horizontal.
+4. **Ocultação de Alertas Intrusivos:** O banner ativo de alertas de vencimento (`BannerLembreteWhatsApp`) e os contadores de alertas foram ocultados da interface principal, mantendo a experiência limpa e focada no orçamento.
+5. **Central Exclusiva de Cadastramento de Números (`ModalLembretesWhatsApp`):** Interface modal dedicada exclusivamente ao cadastro, gerenciamento, ativação e teste de números de WhatsApp, sem poluição visual de abas ou alertas automáticos.
 
-### 11.2 Cadastro de Múltiplos Números de WhatsApp (`DestinatarioWhatsApp[]`)
-O sistema suporta cadastro dinâmico de múltiplos números telefônicos para famílias ou casais que compartilham despesas:
+### 11.2 Cadastro e Gerenciamento de Números de WhatsApp (`DestinatarioWhatsApp[]`)
+O sistema suporta cadastro dinâmico de múltiplos números telefônicos para famílias ou casais que compartilham o painel:
 1. **Identificação e Vínculo:** Cada registro armazena nome identificador (ex: *Titular*, *Cônjuge*, *Familiar*), telefone com DDD e tipo de vínculo.
-2. **Controle Individual de Ativação:** Cada contato possui um seletor rápido para ativar ou desativar o recebimento dos alertas sem precisar deletar o número.
-3. **Disparo em Lote Sequenciado:** Dispara os lembretes formatados para todos os contatos ativos cadastrados, com temporização suave para evitar bloqueios de popup do navegador.
-
-### 11.3 Robô de Automação Diária e Webhook Gateway
-1. **Disparo Automático Diário (`executarDisparoAutomaticoSeNecessario`):**
-   - Ao iniciar a aplicação ou carregar os lançamentos, o sistema verifica se há contas a vencer no dia ou nos próximos dias.
-   - Valida se o disparo de hoje (`YYYY-MM-DD`) já foi realizado para evitar repetições indesejadas no mesmo dia.
-   - Realiza o envio automático para todos os números ativos cadastrados.
-2. **Integração com Webhooks e Gateways WhatsApp:**
-   - Suporte opcional a endpoint POST REST (ex: Z-API, Evolution API, Baileys ou Supabase Edge Functions) com autenticação Bearer Token, viabilizando disparos 100% silenciosos em background.
+2. **Controle Individual de Ativação:** Cada contato possui um seletor rápido para ativar ou desativar o número individualmente.
+3. **Validação com Mensagem de Teste:** Botão de teste direto que abre o WhatsApp com mensagem de verificação para validar a conectividade do número cadastrado.
 
 ---
 
@@ -355,3 +347,17 @@ Para assegurar que cada usuário do aplicativo gerencie seu próprio orçamento 
 3. **Normalização Simétrica dos Botões Inline:**
    - Botões de confirmação (`Check`) e cancelamento (`X`) configurados com dimensões fixas de `h-[38px] w-[38px] shrink-0` e alinhamento centralizado com cursores e estados interativos consistentes.
    - Prevenção de quebra de linhas nas seções de navegação em telas intermediárias com `hidden 2xl:flex` e `whitespace-nowrap`.
+
+---
+
+## 15. Ocultação de Alertas do WhatsApp e Central de Cadastro de Números
+
+### 15.1 Ocultação dos Alertas e Notificações de Vencimento
+1. **Remoção do Banner Superior:** O banner de notificação de contas pendentes (`BannerLembreteWhatsApp`) foi removido da tela inicial em `App.tsx`, eliminando alertas visuais intrusivos sobre o orçamento.
+2. **Eliminação do Contador na Barra de Comandos:** O badge numérico laranja de alertas sobre o ícone do WhatsApp no `HeaderMotorRenda.tsx` foi removido, mantendo o botão limpo e discreto apenas com ícone e rótulo.
+3. **Desativação de Disparos em Segundo Plano:** O efeito de disparo diário automático em background foi desativado em `App.tsx`.
+
+### 15.2 Redesenho Exclusivo do Modal de Cadastramento de Números (`ModalLembretesWhatsApp`)
+1. **Foco Estrito no Cadastramento:** O modal foi reformulado para eliminar abas secundárias (`Contas a Vencer` e `Automação Diária`), apresentando diretamente a interface limpa e focada de **Cadastro de Números de WhatsApp**.
+2. **Formulário Ágil:** Cadastro imediato com campos de Identificação/Nome, WhatsApp com DDD e Vínculo (Titular, Cônjuge, Familiar, Outro) com botão de salvar de alta ênfase no padrão Factory.
+3. **Gerenciamento de Destinatários:** Lista clara dos números cadastrados com alternador de ativação/desativação, botão para teste instantâneo de conectividade e exclusão direta.

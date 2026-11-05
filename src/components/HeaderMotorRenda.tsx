@@ -26,7 +26,6 @@ interface Props {
   onSincronizar?: () => void;
   onAbrirNotificacoes?: () => void;
   onAbrirWhatsApp?: () => void;
-  totalLembretesWhatsApp?: number;
   onAbrirNuvem?: () => void;
   onAtualizarRenda: (novaRenda: number) => void;
   onAjustarTotalGeral?: (novoTotal: number) => void;
@@ -44,7 +43,6 @@ export const HeaderMotorRenda = ({
   onSincronizar,
   onAbrirNotificacoes,
   onAbrirWhatsApp,
-  totalLembretesWhatsApp = 0,
   onAbrirNuvem,
   onAtualizarRenda,
   onAjustarTotalGeral,
@@ -172,20 +170,15 @@ export const HeaderMotorRenda = ({
             </button>
           )}
 
-          {/* Lembretes de Vencimento no WhatsApp */}
+          {/* Cadastramento de Números de WhatsApp */}
           {onAbrirWhatsApp && (
             <button
               onClick={onAbrirWhatsApp}
-              className="h-[34px] px-2 sm:px-2.5 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#25D366] text-[#8a8380] hover:text-[#25D366] flex items-center justify-center gap-1 sm:gap-1.5 font-mono text-xs uppercase tracking-tight cursor-pointer transition-colors relative shrink-0"
-              title="Lembretes de contas a vencer no WhatsApp"
+              className="h-[34px] px-2 sm:px-2.5 rounded-[3px] bg-transparent border border-[#3d3a39] hover:border-[#25D366] text-[#8a8380] hover:text-[#25D366] flex items-center justify-center gap-1 sm:gap-1.5 font-mono text-xs uppercase tracking-tight cursor-pointer transition-colors shrink-0"
+              title="Cadastrar e gerenciar números de WhatsApp"
             >
               <MessageSquare className="w-3.5 h-3.5 text-[#25D366]" />
               <span className="hidden md:inline">WhatsApp</span>
-              {totalLembretesWhatsApp > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-[#ee6018] text-[#101010] text-[9px] font-bold">
-                  {totalLembretesWhatsApp}
-                </span>
-              )}
             </button>
           )}
 
